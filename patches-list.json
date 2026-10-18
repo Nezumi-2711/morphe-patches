@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.0.0",
+  "version": "1.0.1-dev.1",
   "patches": [
     {
       "name": "Example Patch",
@@ -142,6 +142,32 @@
     {
       "name": "Zalo hide text typing",
       "description": "Hide outgoing text typing in direct and group chats when enabled in Nezumi Settings.",
+      "default": false,
+      "category": null,
+      "compatiblePackages": [
+        {
+          "packageName": "com.zing.zalo",
+          "name": "Zalo",
+          "description": null,
+          "apkFileType": "APKM",
+          "appIconColor": "#0068FF",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "26.08.01",
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Zalo native signature fix",
+      "description": "Allow Zalo 26.08.01 ARM64 to start after patching and re-signing.",
       "default": false,
       "category": null,
       "compatiblePackages": [
