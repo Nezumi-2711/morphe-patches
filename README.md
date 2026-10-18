@@ -1,16 +1,14 @@
-# 👋🧩 Morphe Patches template
+# Nezumi Patches
 
-Template repository for Morphe Patches.
+Community patches for Zalo, compatible with Morphe.
 
 ## ❓ About
 
-Patches for apps I like.
-
-<!-- TODO: Update this about section with a brief introduction/summary about this repo and what it offers. -->
+This repository contains Zalo patches for chat heads, chat reactions and optional privacy controls for delivery receipts, read receipts and typing indicators. Compatibility is limited to the app versions declared by each patch.
 
 ### How to use these patches
 
-Click here to add these patches to Morphe: https://morphe.software/add-source?github=xyz-user/xyz-patches
+Add this source in Morphe: https://morphe.software/add-source?github=Nezumi-2711/morphe-patches
 
 ## 🩹 Patches list
 
@@ -88,4 +86,4 @@ See the [Morphe documentation](https://github.com/MorpheApp/morphe-documentation
 
 ## 📜 License
 
-UserXYZ Patches are licensed under the [GNU General Public License v3.0](LICENSE)
+Nezumi Patches are licensed under the [GNU General Public License v3.0](LICENSE)

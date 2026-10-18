@@ -1,14 +1,13 @@
-group = "app.template"
+group = "app.nezumi.patches"
 
 patches {
-    // TODO: Update this section with your project details.
     about {
-        name = "UserXYZ Patches"
-        description = "Patches for apps I like"
-        source = "git@github.com:UserXYZ/morphe-patches.git"
-        author = "Awesome dev"
-        contact = "na"
-        website = "na"
+        name = "Nezumi Patches"
+        description = "Community patches for Zalo, compatible with Morphe"
+        source = "https://github.com/Nezumi-2711/morphe-patches"
+        author = "Nezumi-2711"
+        contact = "https://github.com/Nezumi-2711/morphe-patches/issues"
+        website = "https://github.com/Nezumi-2711/morphe-patches"
         license = "GPLv3"
     }
 }
