@@ -13,7 +13,7 @@ Add this source in Morphe: https://morphe.software/add-source?github=Nezumi-2711
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.0.0](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.0.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;6 patches total
+> **[v1.0.1-dev.1](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.0.1-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;7 patches total
 <details open>
 <summary>📦 XYZ app&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
@@ -30,7 +30,7 @@ Add this source in Morphe: https://morphe.software/add-source?github=Nezumi-2711
 </details>
 
 <details open>
-<summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
+<summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -45,6 +45,7 @@ Add this source in Morphe: https://morphe.software/add-source?github=Nezumi-2711
 | [Zalo hide delivery receipts](#zalo-hide-delivery-receipts) | Suppress outgoing message delivery ACKs when enabled in Nezumi Settings. |  |
 | [Zalo hide read receipts](#zalo-hide-read-receipts) | Keep outgoing read receipts private while retaining delivery ACKs when enabled in Nezumi Settings. |  |
 | [Zalo hide text typing](#zalo-hide-text-typing) | Hide outgoing text typing in direct and group chats when enabled in Nezumi Settings. |  |
+| [Zalo native signature fix](#zalo-native-signature-fix) | Allow Zalo 26.08.01 ARM64 to start after patching and re-signing. |  |
 
 </details>
 

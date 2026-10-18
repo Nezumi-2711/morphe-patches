@@ -57,6 +57,7 @@ val chatReactionPickerPatch = bytecodePatch(
         targets = listOf(AppTarget(version = "26.08.01")),
     ))
 
+    dependsOn(nativeSignaturePatch)
     extendWith("extensions/extension.mpe")
 
     execute {
