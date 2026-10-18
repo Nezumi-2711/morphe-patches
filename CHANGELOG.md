@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.0.0...v1.0.1) (2026-10-18)
+
+### 🐛 Bug Fixes
+
+* **zalo:** apply native signature fix with feature patches ([8c0cf4f](https://github.com/Nezumi-2711/morphe-patches/commit/8c0cf4fe2e6f942da8f5cd6d5cc1d8745cf91b62))
+
 ## [1.0.1-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.0.0...v1.0.1-dev.1) (2026-10-18)
 
 ### 🐛 Bug Fixes
