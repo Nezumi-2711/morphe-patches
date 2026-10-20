@@ -1,3 +1,10 @@
+/*
+ * Derived from zeldrisho/morphe-patches (GPL-3.0):
+ * extensions/zalo/src/main/java/com/zeldrisho/zalo/extension/ZaloMicroGSupport.java
+ * Modified by Nezumi-2711 on <2026-10-20>: simplified (no test seams, no refresh coalescing),
+ * repackaged as app.template.extension.extension.
+ */
+
 package app.template.extension.extension;
 
 import android.app.Activity;
