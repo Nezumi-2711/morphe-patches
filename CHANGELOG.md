@@ -1,3 +1,9 @@
+## [1.1.0-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.0.1...v1.1.0-dev.1) (2026-10-20)
+
+### ✨ New Features
+
+* **zalo:** combine Drive media backup with microG support ([2db444b](https://github.com/Nezumi-2711/morphe-patches/commit/2db444bb74456b6664203bff0f90613e0500488a))
+
 ## [1.0.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.0.0...v1.0.1) (2026-10-18)
 
 ### 🐛 Bug Fixes
