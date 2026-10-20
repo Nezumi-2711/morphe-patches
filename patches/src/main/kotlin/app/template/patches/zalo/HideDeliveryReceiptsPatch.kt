@@ -30,7 +30,7 @@ private object DeliveryAckFingerprint : Fingerprint(
 
 @Suppress("unused")
 val hideDeliveryReceiptsPatch = bytecodePatch(
-    name = "Zalo hide delivery receipts",
+    name = "Hide delivery receipts",
     description = "Suppress outgoing message delivery ACKs when enabled in Nezumi Settings.",
     default = false,
 ) {

@@ -43,7 +43,7 @@ private object ReadMarkerFingerprint : Fingerprint(
 
 @Suppress("unused")
 val hideReadReceiptsPatch = bytecodePatch(
-    name = "Zalo hide read receipts",
+    name = "Hide read receipts",
     description = "Keep outgoing read receipts private while retaining delivery ACKs when enabled in Nezumi Settings.",
     default = false,
 ) {
