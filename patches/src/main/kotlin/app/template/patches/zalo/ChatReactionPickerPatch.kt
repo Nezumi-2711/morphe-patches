@@ -45,7 +45,7 @@ internal object ZaloSettingsFingerprint : Fingerprint(
 
 @Suppress("unused")
 val chatReactionPickerPatch = bytecodePatch(
-    name = "Zalo chat reaction picker",
+    name = "Chat reaction picker",
     description = "Allow the enabled chat reaction UI without a matching subscription package.",
     default = false,
 ) {

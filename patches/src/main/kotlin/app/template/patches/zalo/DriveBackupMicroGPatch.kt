@@ -166,7 +166,7 @@ private fun enableDriveMediaBackup(method: MutableMethod) {
 
 @Suppress("unused")
 val driveBackupMicroGPatch = bytecodePatch(
-    name = "Zalo Drive backup via microG",
+    name = "Drive backup via microG",
     description = "Enable Google Drive photo backup and use microG for Drive accounts and authentication.",
     default = false,
 ) {

@@ -15,7 +15,7 @@ private val PATCHED_RETURN = byteArrayOf(0x20, 0x00, 0x80.toByte(), 0x52)
 
 @Suppress("unused")
 val nativeSignaturePatch = rawResourcePatch(
-    name = "Zalo native signature fix",
+    name = "Native signature fix",
     description = "Allow Zalo 26.08.01 ARM64 to start after patching and re-signing.",
     default = false,
 ) {
