@@ -13,7 +13,7 @@ Add this source in Morphe: https://morphe.software/add-source?github=Nezumi-2711
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.1.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.1.0-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;7 patches total
+> **[v1.1.0](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.1.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;7 patches total
 <details open>
 <summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;7 patches</summary>
 <br>
@@ -25,13 +25,13 @@ Add this source in Morphe: https://morphe.software/add-source?github=Nezumi-2711
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
-| [Zalo Drive backup via microG](#zalo-drive-backup-via-microg) | Enable Google Drive photo backup and use microG for Drive accounts and authentication. |  |
-| [Zalo chat heads instead of Android bubbles](#zalo-chat-heads-instead-of-android-bubbles) | Use Zalo's overlay chat heads rather than native Android bubbles on Android 11 and newer. |  |
-| [Zalo chat reaction picker](#zalo-chat-reaction-picker) | Allow the enabled chat reaction UI without a matching subscription package. |  |
-| [Zalo hide delivery receipts](#zalo-hide-delivery-receipts) | Suppress outgoing message delivery ACKs when enabled in Nezumi Settings. |  |
-| [Zalo hide read receipts](#zalo-hide-read-receipts) | Keep outgoing read receipts private while retaining delivery ACKs when enabled in Nezumi Settings. |  |
-| [Zalo hide text typing](#zalo-hide-text-typing) | Hide outgoing text typing in direct and group chats when enabled in Nezumi Settings. |  |
-| [Zalo native signature fix](#zalo-native-signature-fix) | Allow Zalo 26.08.01 ARM64 to start after patching and re-signing. |  |
+| [Chat heads instead of Android bubbles](#chat-heads-instead-of-android-bubbles) | Use Zalo's overlay chat heads rather than native Android bubbles on Android 11 and newer. |  |
+| [Chat reaction picker](#chat-reaction-picker) | Allow the enabled chat reaction UI without a matching subscription package. |  |
+| [Drive backup via microG](#drive-backup-via-microg) | Enable Google Drive photo backup and use microG for Drive accounts and authentication. |  |
+| [Hide delivery receipts](#hide-delivery-receipts) | Suppress outgoing message delivery ACKs when enabled in Nezumi Settings. |  |
+| [Hide read receipts](#hide-read-receipts) | Keep outgoing read receipts private while retaining delivery ACKs when enabled in Nezumi Settings. |  |
+| [Hide text typing](#hide-text-typing) | Hide outgoing text typing in direct and group chats when enabled in Nezumi Settings. |  |
+| [Native signature fix](#native-signature-fix) | Allow Zalo 26.08.01 ARM64 to start after patching and re-signing. |  |
 
 </details>
 
