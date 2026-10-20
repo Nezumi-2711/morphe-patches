@@ -59,7 +59,7 @@ private fun suppressTextTyping(method: MutableMethod, statusParameter: String) {
 
 @Suppress("unused")
 val hideTextTypingPatch = bytecodePatch(
-    name = "Zalo hide text typing",
+    name = "Hide text typing",
     description = "Hide outgoing text typing in direct and group chats when enabled in Nezumi Settings.",
     default = false,
 ) {

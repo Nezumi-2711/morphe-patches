@@ -56,7 +56,8 @@ public final class ChatHeadAction {
         boolean found = false;
         for (Object item : displayed) {
             try {
-                if (item != null && item.getClass().getField("b").getInt(item) == OPTION_ID) {
+                if (item != null && "wd1.m".equals(item.getClass().getName())
+                        && item.getClass().getField("b").getInt(item) == OPTION_ID) {
                     found = true;
                     break;
                 }
@@ -68,7 +69,7 @@ public final class ChatHeadAction {
     }
 
     public static boolean handleOption(Object adapter, Object option) {
-        if (option == null) return false;
+        if (option == null || !"wd1.m".equals(option.getClass().getName())) return false;
         try {
             int optionId = option.getClass().getField("b").getInt(option);
             if (optionId != OPTION_ID) return false;
