@@ -1,3 +1,7 @@
+// Portions derived from zeldrisho/morphe-patches (GPL-3.0):
+// patches/src/main/kotlin/com/zeldrisho/patches/zalo/{backup,microg}/
+// Modified by Nezumi-2711 on <2026-10-20>: merged into a single patch, ...
+
 package app.template.patches.zalo
 
 import app.morphe.patcher.Fingerprint
