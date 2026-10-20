@@ -1,3 +1,9 @@
+## [1.1.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/compare/v1.1.0-dev.1...v1.1.0-dev.2) (2026-10-20)
+
+### 🐛 Bug Fixes
+
+* avoid Zalo chat info crash on non-option rows ([59b6f9a](https://github.com/Nezumi-2711/morphe-patches/commit/59b6f9a9964b203dc13a580487efbb7ccfb763d0))
+
 ## [1.1.0-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.0.1...v1.1.0-dev.1) (2026-10-20)
 
 ### ✨ New Features
