@@ -1,3 +1,9 @@
+## [1.1.1-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.1.0...v1.1.1-dev.1) (2026-10-21)
+
+### 🐛 Bug Fixes
+
+* **zalo:** follow internal dark theme in Nezumi settings ([99ec85d](https://github.com/Nezumi-2711/morphe-patches/commit/99ec85db801b0345eebe0b295a85d04696d9fc0b))
+
 ## [1.1.0](https://github.com/Nezumi-2711/morphe-patches/compare/v1.0.1...v1.1.0) (2026-10-20)
 
 ### 🐛 Bug Fixes
