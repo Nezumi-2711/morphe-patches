@@ -1,3 +1,9 @@
+## [1.2.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/compare/v1.2.0-dev.1...v1.2.0-dev.2) (2026-10-21)
+
+### ✨ New Features
+
+* **zalo:** add optional Media Box hiding ([e3ac79d](https://github.com/Nezumi-2711/morphe-patches/commit/e3ac79df1c83897a91eb19109740d677669284ce))
+
 ## [1.2.0-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.1.1-dev.1...v1.2.0-dev.1) (2026-10-21)
 
 ### ✨ New Features
