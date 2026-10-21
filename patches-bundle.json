@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-10-21T03:05:35",
-  "description": "## [1.1.1-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.1.0...v1.1.1-dev.1) (2026-10-21)\n\n### 🐛 Bug Fixes\n\n* **zalo:** follow internal dark theme in Nezumi settings ([99ec85d](https://github.com/Nezumi-2711/morphe-patches/commit/99ec85db801b0345eebe0b295a85d04696d9fc0b))",
-  "download_url": "https://github.com/Nezumi-2711/morphe-patches/releases/download/v1.1.1-dev.1/patches-1.1.1-dev.1.mpp",
+  "created_at": "2026-10-21T07:20:04",
+  "description": "## [1.2.0-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.1.1-dev.1...v1.2.0-dev.1) (2026-10-21)\n\n### ✨ New Features\n\n* **zalo:** add custom font support across native UI ([a01f220](https://github.com/Nezumi-2711/morphe-patches/commit/a01f22091ff13c413fc73d9b555737aff1e68d45))",
+  "download_url": "https://github.com/Nezumi-2711/morphe-patches/releases/download/v1.2.0-dev.1/patches-1.2.0-dev.1.mpp",
   "signature_download_url": "",
-  "version": "1.1.1-dev.1"
+  "version": "1.2.0-dev.1"
 }
