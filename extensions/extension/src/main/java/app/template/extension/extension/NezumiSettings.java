@@ -27,6 +27,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.lang.reflect.Constructor;
 
@@ -163,6 +164,8 @@ public final class NezumiSettings {
         text.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         text.setTextColor(textColor(context, darkMode));
         text.setGravity(Gravity.CENTER_VERTICAL);
+        android.graphics.Typeface font = CustomFont.forMessageModule(context, text.getTypeface());
+        if (font != text.getTypeface()) text.setTypeface(font);
         return text;
     }
 
@@ -238,11 +241,11 @@ public final class NezumiSettings {
         }
     }
 
-    private static void addGroup(LinearLayout list, Context context, boolean vietnamese, boolean darkMode) {
+    private static void addGroup(LinearLayout list, Context context, String title, boolean darkMode) {
         View spacer = new View(context);
         spacer.setBackgroundColor(sectionColor(context, darkMode));
         list.addView(spacer, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 8)));
-        TextView heading = label(context, vietnamese ? "Trò chuyện" : "Chat", darkMode);
+        TextView heading = label(context, title, darkMode);
         heading.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
         heading.setTextColor(0xFF1255B8);
         heading.setPadding(dp(context, 16), 0, 0, 0);
@@ -259,7 +262,7 @@ public final class NezumiSettings {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         Dialog page = page(context, "Nezumi's Settings", darkMode);
         LinearLayout list = page.findViewById(android.R.id.content).findViewWithTag("nezumi-list");
-        addGroup(list, context, vietnamese, darkMode);
+        addGroup(list, context, vietnamese ? "Trò chuyện" : "Chat", darkMode);
         LinearLayout item = new LinearLayout(context);
         item.setGravity(Gravity.CENTER_VERTICAL);
         item.setBackgroundColor(surfaceColor(context, darkMode));
@@ -328,6 +331,29 @@ public final class NezumiSettings {
         deliveryItem.addView(deliveryToggle);
         deliveryItem.setOnClickListener(view -> deliveryToggle.setChecked(!deliveryToggle.isChecked()));
         list.addView(deliveryItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        addGroup(list, context, vietnamese ? "Giao diện" : "Appearance", darkMode);
+        String fontTitle = vietnamese ? "Phông chữ tùy chọn" : "Custom font";
+        View fontItem = row(context, fontTitle, false, true, darkMode);
+        TextView fontLabel = findTextView(fontItem);
+        Runnable updateFontLabel = () -> fontLabel.setText(fontTitle + (CustomFont.isSelected(context)
+            ? (vietnamese ? " (đã chọn)" : " (selected)") : ""));
+        updateFontLabel.run();
+        fontItem.setOnClickListener(view -> {
+            if (!CustomFont.pick(context, updateFontLabel)) {
+            Toast.makeText(context, vietnamese ? "Không thể mở trình chọn phông chữ" : "Cannot open font picker",
+                Toast.LENGTH_SHORT).show();
+            }
+        });
+        list.addView(fontItem);
+        View resetFont = row(context, vietnamese ? "Dùng phông chữ mặc định" : "Restore default font",
+            false, false, darkMode);
+        resetFont.setOnClickListener(view -> {
+            CustomFont.reset(context);
+            updateFontLabel.run();
+            Toast.makeText(context, vietnamese ? "Mở lại Zalo để cập nhật phông chữ"
+                : "Restart Zalo to refresh text", Toast.LENGTH_LONG).show();
+        });
+        list.addView(resetFont);
         page.show();
         page.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
     }
