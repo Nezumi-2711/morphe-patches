@@ -81,10 +81,20 @@ public final class NezumiSettings {
         }
         Context context = anchor.getContext();
         boolean darkMode = isDarkMode(context, anchor);
-        View entry = row(context, "Nezumi's Settings", true, true, darkMode);
+        int titleId = context.getResources().getIdentifier("list_title", "id", context.getPackageName());
+        View title = titleId == 0 ? null : anchor.findViewById(titleId);
+        TextView nativeTitle = title instanceof TextView ? (TextView) title : null;
+        View entry = row(context, "Nezumi's Settings", true, true, darkMode, nativeTitle);
+        Drawable background = anchor.getBackground();
+        if (background != null && background.getConstantState() != null) {
+            entry.setBackground(background.getConstantState().newDrawable(context.getResources()).mutate());
+        }
         entry.setTag(ENTRY_TAG);
         entry.setOnClickListener(view -> showNezumi(context, darkMode));
         parent.addView(entry, parent.indexOfChild(anchor) + 1);
+        int dividerId = context.getResources().getIdentifier("list_divider", "id", context.getPackageName());
+        View divider = dividerId == 0 ? null : anchor.findViewById(dividerId);
+        if (divider != null) divider.post(() -> divider.setVisibility(View.VISIBLE));
     }
 
     private static int dp(Context context, int value) {
@@ -186,6 +196,11 @@ public final class NezumiSettings {
     }
 
     private static View row(Context context, String title, boolean icon, boolean chevron, boolean darkMode) {
+        return row(context, title, icon, chevron, darkMode, null);
+    }
+
+    private static View row(Context context, String title, boolean icon, boolean chevron,
+                            boolean darkMode, TextView nativeTitle) {
         LinearLayout wrapper = new LinearLayout(context);
         wrapper.setOrientation(LinearLayout.VERTICAL);
         wrapper.setBackgroundColor(surfaceColor(context, darkMode));
@@ -203,7 +218,14 @@ public final class NezumiSettings {
             leadingParams.rightMargin = dp(context, 18);
             content.addView(leading, leadingParams);
         }
-        TextView text = label(context, title, darkMode);
+        TextView text = nativeTitle == null ? label(context, title, darkMode) : new TextView(context);
+        if (nativeTitle != null) {
+            text.setText(title);
+            text.setTextSize(TypedValue.COMPLEX_UNIT_PX, nativeTitle.getTextSize());
+            text.setTypeface(nativeTitle.getTypeface());
+            text.setTextColor(nativeTitle.getTextColors());
+            text.setGravity(Gravity.CENTER_VERTICAL);
+        }
         content.addView(text, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         if (chevron) {
             ImageView trailing = new ImageView(context);
