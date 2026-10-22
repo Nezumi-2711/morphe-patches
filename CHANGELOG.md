@@ -1,3 +1,9 @@
+## [1.2.0-dev.3](https://github.com/Nezumi-2711/morphe-patches/compare/v1.2.0-dev.2...v1.2.0-dev.3) (2026-10-22)
+
+### 🐛 Bug Fixes
+
+* **zalo:** apply custom font to OA article titles ([4a893d7](https://github.com/Nezumi-2711/morphe-patches/commit/4a893d77aeb2ecb75ccbd91ed071d42127259a29))
+
 ## [1.2.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/compare/v1.2.0-dev.1...v1.2.0-dev.2) (2026-10-21)
 
 ### ✨ New Features
