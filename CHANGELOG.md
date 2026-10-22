@@ -1,3 +1,33 @@
+## [1.2.0-dev.4](https://github.com/Nezumi-2711/morphe-patches/compare/v1.2.0-dev.3...v1.2.0-dev.4) (2026-10-22)
+
+### 🐛 Bug Fixes
+
+* **zalo:** match Nezumi settings row styling ([0279308](https://github.com/Nezumi-2711/morphe-patches/commit/027930851a52dc56b3466ba190b1e2ecd36aefce))
+
+## [1.2.0-dev.3](https://github.com/Nezumi-2711/morphe-patches/compare/v1.2.0-dev.2...v1.2.0-dev.3) (2026-10-22)
+
+### 🐛 Bug Fixes
+
+* **zalo:** apply custom font to OA article titles ([4a893d7](https://github.com/Nezumi-2711/morphe-patches/commit/4a893d77aeb2ecb75ccbd91ed071d42127259a29))
+
+## [1.2.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/compare/v1.2.0-dev.1...v1.2.0-dev.2) (2026-10-21)
+
+### ✨ New Features
+
+* **zalo:** add optional Media Box hiding ([e3ac79d](https://github.com/Nezumi-2711/morphe-patches/commit/e3ac79df1c83897a91eb19109740d677669284ce))
+
+## [1.2.0-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.1.1-dev.1...v1.2.0-dev.1) (2026-10-21)
+
+### ✨ New Features
+
+* **zalo:** add custom font support across native UI ([a01f220](https://github.com/Nezumi-2711/morphe-patches/commit/a01f22091ff13c413fc73d9b555737aff1e68d45))
+
+## [1.1.1-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.1.0...v1.1.1-dev.1) (2026-10-21)
+
+### 🐛 Bug Fixes
+
+* **zalo:** follow internal dark theme in Nezumi settings ([99ec85d](https://github.com/Nezumi-2711/morphe-patches/commit/99ec85db801b0345eebe0b295a85d04696d9fc0b))
+
 ## [1.1.0](https://github.com/Nezumi-2711/morphe-patches/compare/v1.0.1...v1.1.0) (2026-10-20)
 
 ### 🐛 Bug Fixes

@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -26,6 +27,9 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import java.lang.reflect.Constructor;
 
 public final class NezumiSettings {
     private static final String PREFS = "nezumi_settings";
@@ -33,6 +37,7 @@ public final class NezumiSettings {
     private static final String HIDE_TYPING = "hide_text_typing";
     private static final String HIDE_READ_RECEIPTS = "hide_read_receipts";
     private static final String HIDE_DELIVERY_RECEIPTS = "hide_delivery_receipts";
+    private static final String HIDE_MEDIA_BOX = "hide_media_box";
     private static final String ENTRY_TAG = "nezumi-settings-entry";
     private static final int BLUE = 0xFF0068FF;
     private static final int HEADER_BLUE = 0xFF008DFA;
@@ -63,6 +68,11 @@ public final class NezumiSettings {
                 .getBoolean(HIDE_DELIVERY_RECEIPTS, false);
     }
 
+    public static boolean isMediaBoxHidden(Context context) {
+        return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(HIDE_MEDIA_BOX, false);
+    }
+
     public static void attach(View root, View anchor) {
         if (root == null || anchor == null || !(anchor.getParent() instanceof ViewGroup)) return;
         ViewGroup parent = (ViewGroup) anchor.getParent();
@@ -70,10 +80,21 @@ public final class NezumiSettings {
             if (ENTRY_TAG.equals(parent.getChildAt(index).getTag())) return;
         }
         Context context = anchor.getContext();
-        View entry = row(context, "Nezumi's Settings", true, true);
+        boolean darkMode = isDarkMode(context, anchor);
+        int titleId = context.getResources().getIdentifier("list_title", "id", context.getPackageName());
+        View title = titleId == 0 ? null : anchor.findViewById(titleId);
+        TextView nativeTitle = title instanceof TextView ? (TextView) title : null;
+        View entry = row(context, "Nezumi's Settings", true, true, darkMode, nativeTitle);
+        Drawable background = anchor.getBackground();
+        if (background != null && background.getConstantState() != null) {
+            entry.setBackground(background.getConstantState().newDrawable(context.getResources()).mutate());
+        }
         entry.setTag(ENTRY_TAG);
-        entry.setOnClickListener(view -> showNezumi(context));
+        entry.setOnClickListener(view -> showNezumi(context, darkMode));
         parent.addView(entry, parent.indexOfChild(anchor) + 1);
+        int dividerId = context.getResources().getIdentifier("list_divider", "id", context.getPackageName());
+        View divider = dividerId == 0 ? null : anchor.findViewById(dividerId);
+        if (divider != null) divider.post(() -> divider.setVisibility(View.VISIBLE));
     }
 
     private static int dp(Context context, int value) {
@@ -81,21 +102,86 @@ public final class NezumiSettings {
                 context.getResources().getDisplayMetrics());
     }
 
-    private static int textColor(Context context) {
-        TypedValue color = new TypedValue();
-        if (context.getTheme().resolveAttribute(android.R.attr.textColorPrimary, color, true)) {
-            return color.resourceId != 0
-                    ? context.getColorStateList(color.resourceId).getDefaultColor() : color.data;
-        }
-        return 0xFF222222;
+    private static boolean isDarkMode(Context context) {
+        return (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                == Configuration.UI_MODE_NIGHT_YES;
     }
 
-    private static TextView label(Context context, String value) {
-        TextView text = new TextView(context);
+    private static boolean isDarkMode(Context context, View reference) {
+        if (isDarkMode(context)) return true;
+        TextView nativeLabel = findTextView(reference);
+        if (nativeLabel == null) return false;
+        int color = nativeLabel.getCurrentTextColor();
+        int red = (color >> 16) & 0xFF;
+        int green = (color >> 8) & 0xFF;
+        int blue = color & 0xFF;
+        return (red * 299 + green * 587 + blue * 114) / 1000 > 180;
+    }
+
+    private static TextView findTextView(View view) {
+        if (view instanceof TextView) return (TextView) view;
+        if (!(view instanceof ViewGroup)) return null;
+        ViewGroup group = (ViewGroup) view;
+        for (int index = 0; index < group.getChildCount(); index++) {
+            TextView text = findTextView(group.getChildAt(index));
+            if (text != null) return text;
+        }
+        return null;
+    }
+
+    private static int themeColor(Context context, int attribute, int fallback) {
+        TypedValue color = new TypedValue();
+        if (!context.getTheme().resolveAttribute(attribute, color, true)) return fallback;
+        try {
+            return color.resourceId != 0
+                    ? context.getColorStateList(color.resourceId).getDefaultColor() : color.data;
+        } catch (RuntimeException ignored) {
+            return fallback;
+        }
+    }
+
+    private static int resourceColor(Context context, String name, int fallback) {
+        int resourceId = context.getResources().getIdentifier(
+                name, "color", context.getPackageName());
+        if (resourceId == 0) return fallback;
+        try {
+            return context.getColorStateList(resourceId).getDefaultColor();
+        } catch (RuntimeException ignored) {
+            return fallback;
+        }
+    }
+
+    private static int surfaceColor(Context context, boolean darkMode) {
+        if (darkMode) return 0xFF121212;
+        return resourceColor(context, "ui_background", themeColor(context, android.R.attr.colorBackground,
+            0xFFFFFFFF));
+    }
+
+    private static int sectionColor(Context context, boolean darkMode) {
+        return darkMode ? 0xFF1E1E1E : SECTION;
+    }
+
+    private static int textColor(Context context, boolean darkMode) {
+        return darkMode ? 0xFFFFFFFF
+                : resourceColor(context, "list_item_title",
+                themeColor(context, android.R.attr.textColorPrimary, 0xFF222222));
+    }
+
+    private static TextView label(Context context, String value, boolean darkMode) {
+        TextView text;
+        try {
+            Constructor<?> constructor = Class.forName("com.zing.zalo.ui.widget.RobotoTextView")
+                    .getConstructor(Context.class);
+            text = (TextView) constructor.newInstance(context);
+        } catch (ReflectiveOperationException | ClassCastException | SecurityException ignored) {
+            text = new TextView(context);
+        }
         text.setText(value);
         text.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-        text.setTextColor(textColor(context));
+        text.setTextColor(textColor(context, darkMode));
         text.setGravity(Gravity.CENTER_VERTICAL);
+        android.graphics.Typeface font = CustomFont.forMessageModule(context, text.getTypeface());
+        if (font != text.getTypeface()) text.setTypeface(font);
         return text;
     }
 
@@ -109,10 +195,15 @@ public final class NezumiSettings {
         return "vi".equals(context.getResources().getConfiguration().locale.getLanguage());
     }
 
-    private static View row(Context context, String title, boolean icon, boolean chevron) {
+    private static View row(Context context, String title, boolean icon, boolean chevron, boolean darkMode) {
+        return row(context, title, icon, chevron, darkMode, null);
+    }
+
+    private static View row(Context context, String title, boolean icon, boolean chevron,
+                            boolean darkMode, TextView nativeTitle) {
         LinearLayout wrapper = new LinearLayout(context);
         wrapper.setOrientation(LinearLayout.VERTICAL);
-        wrapper.setBackgroundColor(0xFFFFFFFF);
+        wrapper.setBackgroundColor(surfaceColor(context, darkMode));
         LinearLayout content = new LinearLayout(context);
         content.setGravity(Gravity.CENTER_VERTICAL);
         content.setPadding(dp(context, 16), 0, dp(context, 16), 0);
@@ -127,7 +218,14 @@ public final class NezumiSettings {
             leadingParams.rightMargin = dp(context, 18);
             content.addView(leading, leadingParams);
         }
-        TextView text = label(context, title);
+        TextView text = nativeTitle == null ? label(context, title, darkMode) : new TextView(context);
+        if (nativeTitle != null) {
+            text.setText(title);
+            text.setTextSize(TypedValue.COMPLEX_UNIT_PX, nativeTitle.getTextSize());
+            text.setTypeface(nativeTitle.getTypeface());
+            text.setTextColor(nativeTitle.getTextColors());
+            text.setGravity(Gravity.CENTER_VERTICAL);
+        }
         content.addView(text, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         if (chevron) {
             ImageView trailing = new ImageView(context);
@@ -148,7 +246,8 @@ public final class NezumiSettings {
         }
         wrapper.addView(content, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 49)));
         View divider = new View(context);
-        divider.setBackgroundColor(DIVIDER);
+        divider.setBackgroundColor(resourceColor(context, "divider_01",
+            darkMode ? 0xFF303030 : DIVIDER));
         LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 1));
         dividerParams.leftMargin = dp(context, icon ? 50 : 16);
@@ -170,33 +269,34 @@ public final class NezumiSettings {
         }
     }
 
-    private static void addGroup(LinearLayout list, Context context, boolean vietnamese) {
+    private static void addGroup(LinearLayout list, Context context, String title, boolean darkMode) {
         View spacer = new View(context);
-        spacer.setBackgroundColor(SECTION);
+        spacer.setBackgroundColor(sectionColor(context, darkMode));
         list.addView(spacer, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 8)));
-        TextView heading = label(context, vietnamese ? "Trò chuyện" : "Chat");
+        TextView heading = label(context, title, darkMode);
         heading.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
         heading.setTextColor(0xFF1255B8);
         heading.setPadding(dp(context, 16), 0, 0, 0);
-        heading.setBackgroundColor(0xFFFFFFFF);
+        heading.setBackgroundColor(surfaceColor(context, darkMode));
         list.addView(heading, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 48)));
     }
 
-    private static void showNezumi(Context context) {
+    private static void showNezumi(Context context, boolean darkMode) {
         boolean vietnamese = isVietnamese(context);
         String reactionLabel = vietnamese ? "Mở khóa biểu tượng cảm xúc" : "Unlock reaction icons";
         String typingLabel = vietnamese ? "Ẩn trạng thái đang nhập" : "Hide typing status";
         String readLabel = vietnamese ? "Ẩn trạng thái đã xem" : "Hide read receipts";
         String deliveryLabel = vietnamese ? "Ẩn trạng thái đã nhận" : "Hide delivery receipts";
+        String mediaBoxLabel = vietnamese ? "Ẩn Media Box" : "Hide Media Box";
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        Dialog page = page(context, "Nezumi's Settings");
+        Dialog page = page(context, "Nezumi's Settings", darkMode);
         LinearLayout list = page.findViewById(android.R.id.content).findViewWithTag("nezumi-list");
-        addGroup(list, context, vietnamese);
+        addGroup(list, context, vietnamese ? "Trò chuyện" : "Chat", darkMode);
         LinearLayout item = new LinearLayout(context);
         item.setGravity(Gravity.CENTER_VERTICAL);
-        item.setBackgroundColor(0xFFFFFFFF);
+        item.setBackgroundColor(surfaceColor(context, darkMode));
         item.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        item.addView(label(context, reactionLabel),
+        item.addView(label(context, reactionLabel, darkMode),
                 new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         Switch toggle = new Switch(context);
         toggle.setContentDescription(reactionLabel);
@@ -211,9 +311,9 @@ public final class NezumiSettings {
         list.addView(item, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
         LinearLayout typingItem = new LinearLayout(context);
         typingItem.setGravity(Gravity.CENTER_VERTICAL);
-        typingItem.setBackgroundColor(0xFFFFFFFF);
+        typingItem.setBackgroundColor(surfaceColor(context, darkMode));
         typingItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        typingItem.addView(label(context, typingLabel),
+        typingItem.addView(label(context, typingLabel, darkMode),
             new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         Switch typingToggle = new Switch(context);
         typingToggle.setContentDescription(typingLabel);
@@ -228,9 +328,9 @@ public final class NezumiSettings {
         list.addView(typingItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
         LinearLayout readItem = new LinearLayout(context);
         readItem.setGravity(Gravity.CENTER_VERTICAL);
-        readItem.setBackgroundColor(0xFFFFFFFF);
+        readItem.setBackgroundColor(surfaceColor(context, darkMode));
         readItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        readItem.addView(label(context, readLabel),
+        readItem.addView(label(context, readLabel, darkMode),
             new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         Switch readToggle = new Switch(context);
         readToggle.setContentDescription(readLabel);
@@ -245,9 +345,9 @@ public final class NezumiSettings {
         list.addView(readItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
         LinearLayout deliveryItem = new LinearLayout(context);
         deliveryItem.setGravity(Gravity.CENTER_VERTICAL);
-        deliveryItem.setBackgroundColor(0xFFFFFFFF);
+        deliveryItem.setBackgroundColor(surfaceColor(context, darkMode));
         deliveryItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        deliveryItem.addView(label(context, deliveryLabel),
+        deliveryItem.addView(label(context, deliveryLabel, darkMode),
             new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         Switch deliveryToggle = new Switch(context);
         deliveryToggle.setContentDescription(deliveryLabel);
@@ -260,11 +360,52 @@ public final class NezumiSettings {
         deliveryItem.addView(deliveryToggle);
         deliveryItem.setOnClickListener(view -> deliveryToggle.setChecked(!deliveryToggle.isChecked()));
         list.addView(deliveryItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        addGroup(list, context, vietnamese ? "Hội thoại" : "Conversation", darkMode);
+        LinearLayout mediaBoxItem = new LinearLayout(context);
+        mediaBoxItem.setGravity(Gravity.CENTER_VERTICAL);
+        mediaBoxItem.setBackgroundColor(surfaceColor(context, darkMode));
+        mediaBoxItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
+        mediaBoxItem.addView(label(context, mediaBoxLabel, darkMode),
+            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        Switch mediaBoxToggle = new Switch(context);
+        mediaBoxToggle.setContentDescription(mediaBoxLabel);
+        mediaBoxToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
+        mediaBoxToggle.setTrackTintList(new ColorStateList(
+            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
+            new int[] { BLUE, 0xFFBDBDBD }));
+        mediaBoxToggle.setChecked(prefs.getBoolean(HIDE_MEDIA_BOX, false));
+        mediaBoxToggle.setOnCheckedChangeListener((button, checked) -> prefs.edit().putBoolean(HIDE_MEDIA_BOX, checked).apply());
+        mediaBoxItem.addView(mediaBoxToggle);
+        mediaBoxItem.setOnClickListener(view -> mediaBoxToggle.setChecked(!mediaBoxToggle.isChecked()));
+        list.addView(mediaBoxItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        addGroup(list, context, vietnamese ? "Giao diện" : "Appearance", darkMode);
+        String fontTitle = vietnamese ? "Phông chữ tùy chọn" : "Custom font";
+        View fontItem = row(context, fontTitle, false, true, darkMode);
+        TextView fontLabel = findTextView(fontItem);
+        Runnable updateFontLabel = () -> fontLabel.setText(fontTitle + (CustomFont.isSelected(context)
+            ? (vietnamese ? " (đã chọn)" : " (selected)") : ""));
+        updateFontLabel.run();
+        fontItem.setOnClickListener(view -> {
+            if (!CustomFont.pick(context, updateFontLabel)) {
+            Toast.makeText(context, vietnamese ? "Không thể mở trình chọn phông chữ" : "Cannot open font picker",
+                Toast.LENGTH_SHORT).show();
+            }
+        });
+        list.addView(fontItem);
+        View resetFont = row(context, vietnamese ? "Dùng phông chữ mặc định" : "Restore default font",
+            false, false, darkMode);
+        resetFont.setOnClickListener(view -> {
+            CustomFont.reset(context);
+            updateFontLabel.run();
+            Toast.makeText(context, vietnamese ? "Mở lại Zalo để cập nhật phông chữ"
+                : "Restart Zalo to refresh text", Toast.LENGTH_LONG).show();
+        });
+        list.addView(resetFont);
         page.show();
         page.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
     }
 
-    private static Dialog page(Context context, String title) {
+    private static Dialog page(Context context, String title, boolean darkMode) {
         Dialog page = new Dialog(context);
         page.requestWindowFeature(Window.FEATURE_NO_TITLE);
         LinearLayout screen = new LinearLayout(context);
@@ -291,12 +432,12 @@ public final class NezumiSettings {
         back.setContentDescription("Back");
         back.setOnClickListener(view -> page.dismiss());
         bar.addView(back, new LinearLayout.LayoutParams(dp(context, 56), ViewGroup.LayoutParams.MATCH_PARENT));
-        TextView pageTitle = label(context, title);
+        TextView pageTitle = label(context, title, darkMode);
         pageTitle.setTextColor(0xFFFFFFFF);
         bar.addView(pageTitle, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         screen.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
         ScrollView scroll = new ScrollView(context);
-        scroll.setBackgroundColor(SECTION);
+        scroll.setBackgroundColor(sectionColor(context, darkMode));
         LinearLayout list = new LinearLayout(context);
         list.setTag("nezumi-list");
         list.setOrientation(LinearLayout.VERTICAL);
@@ -304,7 +445,7 @@ public final class NezumiSettings {
         screen.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         page.setContentView(screen);
         Window window = page.getWindow();
-        window.setBackgroundDrawable(new ColorDrawable(0xFFFFFFFF));
+        window.setBackgroundDrawable(new ColorDrawable(surfaceColor(context, darkMode)));
         window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         window.setDimAmount(0f);
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
