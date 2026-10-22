@@ -9,16 +9,19 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Typeface;
+import android.text.TextPaint;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
+import android.util.Log;
 import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.Locale;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class CustomFont extends Fragment {
@@ -29,6 +32,7 @@ public final class CustomFont extends Fragment {
     private static Typeface cachedFont;
     private static String cachedPath;
     private static final Typeface[] cachedStyles = new Typeface[16];
+    private static final WeakHashMap<TextPaint, Typeface> chatPaintFonts = new WeakHashMap<>();
     private Runnable onChanged;
 
     public static Typeface getTypeface(Context context, int fontStyle) {
@@ -60,6 +64,39 @@ public final class CustomFont extends Fragment {
             return Typeface.create(font, original.getWeight(), original.isItalic());
         }
         return Typeface.create(font, original.getStyle());
+    }
+
+    public static void diagnoseRichItem(Context context, Typeface original, Typeface requested, Typeface actual) {
+        boolean selected = context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).contains(FONT);
+        boolean loaded = getTypeface(context, 0) != null;
+        Log.i(TAG, "rich-item selected=" + selected + " loaded=" + loaded
+                + " changed=" + (requested != original) + " applied=" + (actual == requested));
+    }
+
+    public static Typeface forZinstantText(Context context, boolean hasCachedFont, Typeface original) {
+        if (hasCachedFont) return original;
+        return forMessageModule(context, original);
+    }
+
+    public static void forChatPaint(Context context, TextPaint paint) {
+        if (paint == null) return;
+        Typeface font = getTypeface(context, 0);
+        if (font == null) return;
+        Typeface current = paint.getTypeface();
+        synchronized (chatPaintFonts) {
+            if (current == font || current == chatPaintFonts.get(paint)) return;
+        }
+        if (current != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            font = Typeface.create(font, current.getWeight(), current.isItalic());
+        } else if (current != null) {
+            font = Typeface.create(font, current.getStyle());
+        }
+        if (current != font) {
+            paint.setTypeface(font);
+            synchronized (chatPaintFonts) {
+                chatPaintFonts.put(paint, font);
+            }
+        }
     }
 
     private static Typeface styled(Typeface font, int fontStyle) {
@@ -103,6 +140,9 @@ public final class CustomFont extends Fragment {
             cachedFont = null;
             cachedPath = null;
             for (int index = 0; index < cachedStyles.length; index++) cachedStyles[index] = null;
+        }
+        synchronized (chatPaintFonts) {
+            chatPaintFonts.clear();
         }
         if (previous != null) new File(context.getFilesDir(), previous).delete();
     }
@@ -180,6 +220,9 @@ public final class CustomFont extends Fragment {
                 cachedFont = null;
                 cachedPath = null;
                 for (int index = 0; index < cachedStyles.length; index++) cachedStyles[index] = null;
+            }
+            synchronized (chatPaintFonts) {
+                chatPaintFonts.clear();
             }
             if (previous != null) new File(context.getFilesDir(), previous).delete();
         } catch (Exception exception) {
