@@ -13,7 +13,7 @@ Add this source in Morphe: https://morphe.software/add-source?github=Nezumi-2711
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.2.0-dev.3](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.2.0-dev.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;9 patches total
+> **[v1.2.0-dev.4](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.2.0-dev.4)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;9 patches total
 <details open>
 <summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
 <br>

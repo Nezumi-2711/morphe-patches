@@ -1,3 +1,9 @@
+## [1.2.0-dev.4](https://github.com/Nezumi-2711/morphe-patches/compare/v1.2.0-dev.3...v1.2.0-dev.4) (2026-10-22)
+
+### 🐛 Bug Fixes
+
+* **zalo:** match Nezumi settings row styling ([0279308](https://github.com/Nezumi-2711/morphe-patches/commit/027930851a52dc56b3466ba190b1e2ecd36aefce))
+
 ## [1.2.0-dev.3](https://github.com/Nezumi-2711/morphe-patches/compare/v1.2.0-dev.2...v1.2.0-dev.3) (2026-10-22)
 
 ### 🐛 Bug Fixes
