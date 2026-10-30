@@ -1,3 +1,9 @@
+## [1.2.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.2.0...v1.2.1) (2026-10-30)
+
+### 🚀 Updated App Support
+
+* **zalo:** add support for Zalo 26.10.02 ([1ccc836](https://github.com/Nezumi-2711/morphe-patches/commit/1ccc836ee26f45e9c5bd9578ded7a7c9c973decf))
+
 ## [1.2.1-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.2.0...v1.2.1-dev.1) (2026-10-30)
 
 ### 🚀 Updated App Support
