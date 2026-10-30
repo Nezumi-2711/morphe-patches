@@ -24,9 +24,9 @@ still require device validation; local APK checks alone do not verify them.
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.2.1](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.2.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;9 patches total
+> **[v1.3.0-dev.1](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.3.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;10 patches total
 <details open>
-<summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
+<summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;10 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -38,6 +38,7 @@ still require device validation; local APK checks alone do not verify them.
 |----------|----------------|-----------|
 | [Chat heads instead of Android bubbles](#chat-heads-instead-of-android-bubbles) | Use Zalo's overlay chat heads rather than native Android bubbles on Android 11 and newer. |  |
 | [Chat reaction picker](#chat-reaction-picker) | Allow the enabled chat reaction UI without a matching subscription package. |  |
+| [Clone package](#clone-package) | Install an ARM64 Zalo clone alongside the original with a custom package and app name. Separate accounts are required. | • Clone package name<br>• Clone app name |
 | [Custom font](#custom-font) | Choose a font in Nezumi's Settings for Zalo's text, chat messages, info card, options, and contacts. |  |
 | [Drive backup via microG](#drive-backup-via-microg) | Enable Google Drive photo backup and use microG for Drive accounts and authentication. |  |
 | [Hide Media Box in Messages](#hide-media-box-in-messages) | Hide the Media Box row in Messages when enabled in Nezumi Settings. |  |
