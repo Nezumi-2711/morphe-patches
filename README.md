@@ -10,6 +10,17 @@ This repository contains Zalo patches for chat heads, chat reactions and optiona
 
 Add this source in Morphe: https://morphe.software/add-source?github=Nezumi-2711/morphe-patches
 
+### Clone package (local development)
+
+The optional `Clone package` patch supports Zalo 26.08.01 and 26.10.02 on ARM64.
+Set `packageName` (default `com.zing.zalo.clone`) and `appName` (default `Zalo Clone`)
+in the patch options. Each clone must use a distinct package. It includes the native
+signature fix and separates provider authorities, custom permissions, and Android
+account types from the original app. Use a different Zalo account in each copy;
+this does not change server-side login/session restrictions. Do not combine it
+with another package-renaming patch. Login and simultaneous account operation
+still require device validation; local APK checks alone do not verify them.
+
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
