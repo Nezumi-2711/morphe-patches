@@ -1,3 +1,9 @@
+## [1.3.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/compare/v1.3.0-dev.1...v1.3.0-dev.2) (2026-10-31)
+
+### ✨ New Features
+
+* **zalo:** add view online status privately patch ([0f38271](https://github.com/Nezumi-2711/morphe-patches/commit/0f38271a7a2969ea9ebd7a01b523477a024d5e83))
+
 ## [1.3.0-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.2.1...v1.3.0-dev.1) (2026-10-30)
 
 ### ✨ New Features
