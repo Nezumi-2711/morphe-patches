@@ -1,3 +1,9 @@
+## [1.4.0-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.3.1-dev.1...v1.4.0-dev.1) (2026-11-04)
+
+### ✨ New Features
+
+* **zalo:** add Discovery tab setting ([fa5fc71](https://github.com/Nezumi-2711/morphe-patches/commit/fa5fc71f4bfe79dbcec9947034a90c6ea742accf))
+
 ## [1.3.1-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.3.0...v1.3.1-dev.1) (2026-11-03)
 
 ### 🐛 Bug Fixes
