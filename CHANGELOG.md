@@ -1,3 +1,9 @@
+## [1.4.0-dev.5](https://github.com/Nezumi-2711/morphe-patches/compare/v1.4.0-dev.4...v1.4.0-dev.5) (2026-11-05)
+
+### 🐛 Bug Fixes
+
+* validate bundle signing key ([65fce28](https://github.com/Nezumi-2711/morphe-patches/commit/65fce28a3b7cee3ee8e950d222e929a9c2c6d2ec))
+
 ## [1.4.0-dev.4](https://github.com/Nezumi-2711/morphe-patches/compare/v1.4.0-dev.3...v1.4.0-dev.4) (2026-11-05)
 
 ### ✨ New Features
