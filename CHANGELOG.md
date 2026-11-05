@@ -1,3 +1,9 @@
+## [1.4.0-dev.3](https://github.com/Nezumi-2711/morphe-patches/compare/v1.4.0-dev.2...v1.4.0-dev.3) (2026-11-05)
+
+### 🐛 Bug Fixes
+
+* drop legacy Zalo version support ([a32f638](https://github.com/Nezumi-2711/morphe-patches/commit/a32f638f869860b0b217c9691a476a7f385aee62))
+
 ## [1.4.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/compare/v1.4.0-dev.1...v1.4.0-dev.2) (2026-11-05)
 
 ### 🐛 Bug Fixes
