@@ -38,7 +38,7 @@ val hideDeliveryReceiptsPatch = bytecodePatch(
         packageName = "com.zing.zalo",
         apkFileType = ApkFileType.APKM,
         appIconColor = 0x0068FF,
-        targets = listOf(AppTarget(version = "26.08.01"), AppTarget(version = "26.10.02")),
+        targets = listOf(AppTarget(version = "26.10.02")),
     ))
 
     dependsOn(nativeSignaturePatch)
@@ -75,6 +75,6 @@ val hideDeliveryReceiptsPatch = bytecodePatch(
             return-void
         """.trimIndent(), ExternalLabel("nezumi_original_delivery", originalStart))
 
-        attachNezumiSettings()
+        attachNezumiSettings("attachDeliveryReceipts")
     }
 }

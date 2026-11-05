@@ -68,7 +68,7 @@ val hideTextTypingPatch = bytecodePatch(
         packageName = "com.zing.zalo",
         apkFileType = ApkFileType.APKM,
         appIconColor = 0x0068FF,
-        targets = listOf(AppTarget(version = "26.08.01"), AppTarget(version = "26.10.02")),
+        targets = listOf(AppTarget(version = "26.10.02")),
     ))
 
     dependsOn(nativeSignaturePatch)
@@ -79,6 +79,6 @@ val hideTextTypingPatch = bytecodePatch(
         check(GroupTextTypingFingerprint.matchAll(1..1).size == 1)
         suppressTextTyping(DirectTextTypingFingerprint.method, "p1")
         suppressTextTyping(GroupTextTypingFingerprint.method, "p2")
-        attachNezumiSettings()
+        attachNezumiSettings("attachTyping")
     }
 }

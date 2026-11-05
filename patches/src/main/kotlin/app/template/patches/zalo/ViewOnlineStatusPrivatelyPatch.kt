@@ -81,7 +81,7 @@ val viewOnlineStatusPrivatelyPatch = bytecodePatch(
         packageName = "com.zing.zalo",
         apkFileType = ApkFileType.APKM,
         appIconColor = 0x0068FF,
-        targets = listOf(AppTarget(version = "26.08.01"), AppTarget(version = "26.10.02")),
+        targets = listOf(AppTarget(version = "26.10.02")),
     ))
 
     dependsOn(nativeSignaturePatch)
@@ -344,6 +344,6 @@ val viewOnlineStatusPrivatelyPatch = bytecodePatch(
             if-nez v$clearValue, :nezumi_subtitle_retained
             const/16 v$clearValue, 0x8
         """.trimIndent(), ExternalLabel("nezumi_subtitle_retained", setterInstructions[clearIndex + 4]))
-        attachNezumiSettings()
+        attachNezumiSettings("attachOnlineStatus")
     }
 }

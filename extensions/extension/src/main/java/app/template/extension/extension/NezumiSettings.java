@@ -1,6 +1,7 @@
 package app.template.extension.extension;
 
 import android.app.Dialog;
+import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
@@ -44,12 +45,21 @@ public final class NezumiSettings {
     private static final String HIDE_DELIVERY_RECEIPTS = "hide_delivery_receipts";
     private static final String HIDE_MEDIA_BOX = "hide_media_box";
     private static final String HIDE_ONLINE_STATUS = "hide_online_status";
+    private static final String HIDE_DISCOVERY = "hide_discovery";
     private static final String SAVED_ONLINE_SHARING = "saved_online_sharing";
     private static final String ENTRY_TAG = "nezumi-settings-entry";
     private static final int BLUE = 0xFF0068FF;
     private static final int HEADER_BLUE = 0xFF008DFA;
     private static final int DIVIDER = 0xFFE9EAEC;
     private static final int SECTION = 0xFFF2F3F5;
+    private static final int FEATURE_REACTION = 1;
+    private static final int FEATURE_TYPING = 1 << 1;
+    private static final int FEATURE_READ_RECEIPTS = 1 << 2;
+    private static final int FEATURE_DELIVERY_RECEIPTS = 1 << 3;
+    private static final int FEATURE_MEDIA_BOX = 1 << 4;
+    private static final int FEATURE_ONLINE_STATUS = 1 << 5;
+    private static final int FEATURE_CUSTOM_FONT = 1 << 6;
+    private static final int FEATURE_DISCOVERY = 1 << 7;
     private static final Object ONLINE_LOCK = new Object();
     private static final Set<String> ONLINE_USERS = new HashSet<>();
     private static final WeakHashMap<TextView, ChatPresence> CHAT_SUBTITLES = new WeakHashMap<>();
@@ -67,6 +77,12 @@ public final class NezumiSettings {
     public static boolean isReactionEnabled(Context context) {
         return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .getBoolean(REACTION, true);
+    }
+
+    public static boolean isDiscoveryHidden() {
+        Context context = onlineContext();
+        return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getBoolean(HIDE_DISCOVERY, true);
     }
 
     public static boolean isTypingHidden(Context context) {
@@ -328,6 +344,38 @@ public final class NezumiSettings {
         }
     }
 
+    private static Activity activityContext(Context context) {
+        Context current = context;
+        while (current instanceof android.content.ContextWrapper) {
+            if (current instanceof Activity) return (Activity) current;
+            Context base = ((android.content.ContextWrapper) current).getBaseContext();
+            if (base == current) break;
+            current = base;
+        }
+        return current instanceof Activity ? (Activity) current : null;
+    }
+
+    private static void recreateForDiscovery(Context context) {
+        refreshDiscoveryTabs();
+        Activity activity = activityContext(context);
+        if (activity != null && !activity.isFinishing() && !activity.isChangingConfigurations()) {
+            activity.recreate();
+        }
+    }
+
+    private static void refreshDiscoveryTabs() {
+        String[] configurationClasses = { "if1.y", "kj1.v" };
+        for (String className : configurationClasses) {
+            try {
+                Object configuration = Class.forName(className).getMethod("h").invoke(null);
+                configuration.getClass().getMethod("o").invoke(configuration);
+                configuration.getClass().getMethod("q").invoke(configuration);
+                return;
+            } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+            }
+        }
+    }
+
     private static boolean isOnlineHidden() {
         Context context = onlineContext();
         return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -360,11 +408,47 @@ public final class NezumiSettings {
         return false;
     }
 
-    public static void attach(View root, View anchor) {
+    public static void attachReaction(View root, View anchor) {
+        attach(root, anchor, FEATURE_REACTION);
+    }
+
+    public static void attachTyping(View root, View anchor) {
+        attach(root, anchor, FEATURE_TYPING);
+    }
+
+    public static void attachReadReceipts(View root, View anchor) {
+        attach(root, anchor, FEATURE_READ_RECEIPTS);
+    }
+
+    public static void attachDeliveryReceipts(View root, View anchor) {
+        attach(root, anchor, FEATURE_DELIVERY_RECEIPTS);
+    }
+
+    public static void attachMediaBox(View root, View anchor) {
+        attach(root, anchor, FEATURE_MEDIA_BOX);
+    }
+
+    public static void attachOnlineStatus(View root, View anchor) {
+        attach(root, anchor, FEATURE_ONLINE_STATUS);
+    }
+
+    public static void attachDiscovery(View root, View anchor) {
+        attach(root, anchor, FEATURE_DISCOVERY);
+    }
+
+    public static void attachCustomFont(View root, View anchor) {
+        attach(root, anchor, FEATURE_CUSTOM_FONT);
+    }
+
+    private static void attach(View root, View anchor, int feature) {
         if (root == null || anchor == null || !(anchor.getParent() instanceof ViewGroup)) return;
         ViewGroup parent = (ViewGroup) anchor.getParent();
         for (int index = 0; index < parent.getChildCount(); index++) {
-            if (ENTRY_TAG.equals(parent.getChildAt(index).getTag())) return;
+            Object tag = parent.getChildAt(index).getTag();
+            if (tag instanceof EntryState) {
+                ((EntryState) tag).features |= feature;
+                return;
+            }
         }
         Context context = anchor.getContext();
         boolean darkMode = isDarkMode(context, anchor);
@@ -376,12 +460,21 @@ public final class NezumiSettings {
         if (background != null && background.getConstantState() != null) {
             entry.setBackground(background.getConstantState().newDrawable(context.getResources()).mutate());
         }
-        entry.setTag(ENTRY_TAG);
-        entry.setOnClickListener(view -> showNezumi(context, darkMode));
+        EntryState state = new EntryState(feature);
+        entry.setTag(state);
+        entry.setOnClickListener(view -> showNezumi(context, darkMode, state));
         parent.addView(entry, parent.indexOfChild(anchor) + 1);
         int dividerId = context.getResources().getIdentifier("list_divider", "id", context.getPackageName());
         View divider = dividerId == 0 ? null : anchor.findViewById(dividerId);
         if (divider != null) divider.post(() -> divider.setVisibility(View.VISIBLE));
+    }
+
+    private static final class EntryState {
+        private int features;
+
+        private EntryState(int features) {
+            this.features = features;
+        }
     }
 
     private static int dp(Context context, int value) {
@@ -568,18 +661,27 @@ public final class NezumiSettings {
         list.addView(heading, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 48)));
     }
 
-    private static void showNezumi(Context context, boolean darkMode) {
+    private static void showNezumi(Context context, boolean darkMode, EntryState state) {
         boolean vietnamese = isVietnamese(context);
+        int features = state.features;
+        boolean hasChatFeatures = (features & (FEATURE_ONLINE_STATUS | FEATURE_REACTION |
+            FEATURE_TYPING | FEATURE_READ_RECEIPTS | FEATURE_DELIVERY_RECEIPTS)) != 0;
         String reactionLabel = vietnamese ? "Mở khóa biểu tượng cảm xúc" : "Unlock reaction icons";
         String typingLabel = vietnamese ? "Ẩn trạng thái đang nhập" : "Hide typing status";
         String readLabel = vietnamese ? "Ẩn trạng thái đã xem" : "Hide read receipts";
         String deliveryLabel = vietnamese ? "Ẩn trạng thái đã nhận" : "Hide delivery receipts";
         String mediaBoxLabel = vietnamese ? "Ẩn Media Box" : "Hide Media Box";
         String onlineLabel = vietnamese ? "Ẩn trạng thái hoạt động" : "Hide activity status";
+        String discoveryLabel = vietnamese ? "Ẩn tab Khám phá" : "Hide Discovery tab";
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         Dialog page = page(context, "Nezumi's Settings", darkMode);
+        boolean[] discoveryChanged = { false };
+        page.setOnDismissListener(dialog -> {
+            if (discoveryChanged[0]) recreateForDiscovery(context);
+        });
         LinearLayout list = page.findViewById(android.R.id.content).findViewWithTag("nezumi-list");
-        addGroup(list, context, vietnamese ? "Trò chuyện" : "Chat", darkMode);
+        if (hasChatFeatures) addGroup(list, context, vietnamese ? "Trò chuyện" : "Chat", darkMode);
+        if ((features & FEATURE_ONLINE_STATUS) != 0) {
         LinearLayout onlineItem = new LinearLayout(context);
         onlineItem.setGravity(Gravity.CENTER_VERTICAL);
         onlineItem.setBackgroundColor(surfaceColor(context, darkMode));
@@ -622,6 +724,8 @@ public final class NezumiSettings {
         onlineItem.setOnClickListener(view -> onlineToggle.setChecked(!onlineToggle.isChecked()));
         list.addView(onlineItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
         onlineItem.setVisibility(isOnlinePatchAvailable() ? View.VISIBLE : View.GONE);
+        }
+        if ((features & FEATURE_REACTION) != 0) {
         LinearLayout item = new LinearLayout(context);
         item.setGravity(Gravity.CENTER_VERTICAL);
         item.setBackgroundColor(surfaceColor(context, darkMode));
@@ -639,6 +743,8 @@ public final class NezumiSettings {
         item.addView(toggle);
         item.setOnClickListener(view -> toggle.setChecked(!toggle.isChecked()));
         list.addView(item, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        }
+        if ((features & FEATURE_TYPING) != 0) {
         LinearLayout typingItem = new LinearLayout(context);
         typingItem.setGravity(Gravity.CENTER_VERTICAL);
         typingItem.setBackgroundColor(surfaceColor(context, darkMode));
@@ -656,6 +762,8 @@ public final class NezumiSettings {
         typingItem.addView(typingToggle);
         typingItem.setOnClickListener(view -> typingToggle.setChecked(!typingToggle.isChecked()));
         list.addView(typingItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        }
+        if ((features & FEATURE_READ_RECEIPTS) != 0) {
         LinearLayout readItem = new LinearLayout(context);
         readItem.setGravity(Gravity.CENTER_VERTICAL);
         readItem.setBackgroundColor(surfaceColor(context, darkMode));
@@ -673,6 +781,8 @@ public final class NezumiSettings {
         readItem.addView(readToggle);
         readItem.setOnClickListener(view -> readToggle.setChecked(!readToggle.isChecked()));
         list.addView(readItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        }
+        if ((features & FEATURE_DELIVERY_RECEIPTS) != 0) {
         LinearLayout deliveryItem = new LinearLayout(context);
         deliveryItem.setGravity(Gravity.CENTER_VERTICAL);
         deliveryItem.setBackgroundColor(surfaceColor(context, darkMode));
@@ -690,6 +800,33 @@ public final class NezumiSettings {
         deliveryItem.addView(deliveryToggle);
         deliveryItem.setOnClickListener(view -> deliveryToggle.setChecked(!deliveryToggle.isChecked()));
         list.addView(deliveryItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        }
+        if ((features & FEATURE_DISCOVERY) != 0) {
+        addGroup(list, context, vietnamese ? "Điều hướng" : "Navigation", darkMode);
+        LinearLayout discoveryItem = new LinearLayout(context);
+        discoveryItem.setGravity(Gravity.CENTER_VERTICAL);
+        discoveryItem.setBackgroundColor(surfaceColor(context, darkMode));
+        discoveryItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
+        discoveryItem.addView(label(context, discoveryLabel, darkMode),
+            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        Switch discoveryToggle = new Switch(context);
+        discoveryToggle.setContentDescription(discoveryLabel);
+        discoveryToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
+        discoveryToggle.setTrackTintList(new ColorStateList(
+            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
+            new int[] { BLUE, 0xFFBDBDBD }));
+        discoveryToggle.setChecked(prefs.getBoolean(HIDE_DISCOVERY, true));
+        discoveryToggle.setOnCheckedChangeListener((button, checked) -> {
+            if (prefs.getBoolean(HIDE_DISCOVERY, true) == checked) return;
+            prefs.edit().putBoolean(HIDE_DISCOVERY, checked).apply();
+            discoveryChanged[0] = true;
+        });
+        discoveryItem.addView(discoveryToggle);
+        discoveryItem.setOnClickListener(view -> discoveryToggle.setChecked(!discoveryToggle.isChecked()));
+        list.addView(discoveryItem, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        }
+        if ((features & FEATURE_MEDIA_BOX) != 0) {
         addGroup(list, context, vietnamese ? "Hội thoại" : "Conversation", darkMode);
         LinearLayout mediaBoxItem = new LinearLayout(context);
         mediaBoxItem.setGravity(Gravity.CENTER_VERTICAL);
@@ -708,6 +845,8 @@ public final class NezumiSettings {
         mediaBoxItem.addView(mediaBoxToggle);
         mediaBoxItem.setOnClickListener(view -> mediaBoxToggle.setChecked(!mediaBoxToggle.isChecked()));
         list.addView(mediaBoxItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        }
+        if ((features & FEATURE_CUSTOM_FONT) != 0) {
         addGroup(list, context, vietnamese ? "Giao diện" : "Appearance", darkMode);
         String fontTitle = vietnamese ? "Phông chữ tùy chọn" : "Custom font";
         View fontItem = row(context, fontTitle, false, true, darkMode);
@@ -731,6 +870,7 @@ public final class NezumiSettings {
                 : "Restart Zalo to refresh text", Toast.LENGTH_LONG).show();
         });
         list.addView(resetFont);
+        }
         page.show();
         page.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
     }

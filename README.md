@@ -12,7 +12,7 @@ Add this source in Morphe: https://morphe.software/add-source?github=Nezumi-2711
 
 ### Clone package (local development)
 
-The optional `Clone package` patch supports Zalo 26.08.01 and 26.10.02 on ARM64.
+The optional `Clone package` patch supports Zalo 26.10.02 on ARM64.
 Set `packageName` (default `com.zing.zalo.clone`) and `appName` (default `Zalo Clone`)
 in the patch options. Each clone must use a distinct package. It includes the native
 signature fix and separates provider authorities, custom permissions, and Android
@@ -24,15 +24,15 @@ still require device validation; local APK checks alone do not verify them.
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.3.0](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.3.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;11 patches total
+> **[v1.4.0-dev.5](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.4.0-dev.5)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;12 patches total
 <details open>
-<summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;11 patches</summary>
+<summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;12 patches</summary>
 <br>
 
 **🎯 Supported versions:**
 
-| 26.08.01 | 26.10.02 |
-| :---: | :---: |
+| 26.10.02 |
+| :---: |
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
@@ -41,11 +41,12 @@ still require device validation; local APK checks alone do not verify them.
 | [Clone package](#clone-package) | Install an ARM64 Zalo clone alongside the original with a custom package and app name. Separate accounts are required. | • Clone package name<br>• Clone app name |
 | [Custom font](#custom-font) | Choose a font in Nezumi's Settings for Zalo's text, chat messages, info card, options, and contacts. |  |
 | [Drive backup via microG](#drive-backup-via-microg) | Enable Google Drive photo backup and use microG for Drive accounts and authentication. |  |
+| [Hide Discovery tab](#hide-discovery-tab) | Remove the Discovery tab from Zalo's main navigation. |  |
 | [Hide Media Box in Messages](#hide-media-box-in-messages) | Hide the Media Box row in Messages when enabled in Nezumi Settings. |  |
 | [Hide delivery receipts](#hide-delivery-receipts) | Suppress outgoing message delivery ACKs when enabled in Nezumi Settings. |  |
 | [Hide read receipts](#hide-read-receipts) | Keep outgoing read receipts private while retaining delivery ACKs when enabled in Nezumi Settings. |  |
 | [Hide text typing](#hide-text-typing) | Hide outgoing text typing in direct and group chats when enabled in Nezumi Settings. |  |
-| [Native signature fix](#native-signature-fix) | Allow Zalo 26.08.01 and 26.10.02 ARM64 to start after patching and re-signing. ARMv7 is not supported. |  |
+| [Native signature fix](#native-signature-fix) | Allow Zalo 26.10.02 ARM64 to start after patching and re-signing. ARMv7 is not supported. |  |
 | [View online status privately](#view-online-status-privately) | Hide your activity and show confirmed current-online status in the individual chat header when available. |  |
 
 </details>
@@ -58,6 +59,16 @@ still require device validation; local APK checks alone do not verify them.
 - The built patches .mpp file is found in `patches/build/libs/patches-*.mpp`
 - Patch the mpp file using [Morphe-Desktop](https://github.com/MorpheApp/morphe-desktop)
   like any other patch bundle.
+
+  ### Release signing
+
+  To make Morphe Manager show the bundle signer and reject tampered releases:
+
+  1. Run `./gradlew generateSigningKey` once. This creates `morphe-signing.pub` and `morphe-signing.key`.
+  2. Commit `morphe-signing.pub`; never commit `morphe-signing.key`.
+  3. Store the contents of `morphe-signing.key` in the repository secret `MORPHE_SIGNING_KEY`.
+
+  The release workflow signs every published `.mpp` and publishes its signature alongside the bundle. Keep a secure backup of the private key; replacing it requires users to trust the new signer in Morphe Manager.
 
 See the [Morphe documentation](https://github.com/MorpheApp/morphe-documentation) for more information.
 
