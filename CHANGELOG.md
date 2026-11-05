@@ -1,3 +1,9 @@
+## [1.4.0-dev.4](https://github.com/Nezumi-2711/morphe-patches/compare/v1.4.0-dev.3...v1.4.0-dev.4) (2026-11-05)
+
+### ✨ New Features
+
+* sign patch bundle releases ([23bbf06](https://github.com/Nezumi-2711/morphe-patches/commit/23bbf06b2a67a9c37a833c0c9f39e48f27a41cf6))
+
 ## [1.4.0-dev.3](https://github.com/Nezumi-2711/morphe-patches/compare/v1.4.0-dev.2...v1.4.0-dev.3) (2026-11-05)
 
 ### 🐛 Bug Fixes
