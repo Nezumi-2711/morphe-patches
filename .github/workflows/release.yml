@@ -34,6 +34,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Verify bundle signing key
+        env:
+          MORPHE_SIGNING_KEY: ${{ secrets.MORPHE_SIGNING_KEY }}
+        run: |
+          test -n "$MORPHE_SIGNING_KEY"
+          printf '%s' "$MORPHE_SIGNING_KEY" | tr -d '\r\n' | base64 --decode >/dev/null
+
       # Semantic release runs its own Gradle build command.
       # Only dev and main branch will generate a release as specified by .releaserc
       - name: Release
