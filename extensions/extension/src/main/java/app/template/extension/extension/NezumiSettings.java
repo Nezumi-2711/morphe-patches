@@ -725,31 +725,6 @@ public final class NezumiSettings {
         list.addView(onlineItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
         onlineItem.setVisibility(isOnlinePatchAvailable() ? View.VISIBLE : View.GONE);
         }
-        if ((features & FEATURE_DISCOVERY) != 0) {
-        addGroup(list, context, vietnamese ? "Điều hướng" : "Navigation", darkMode);
-        LinearLayout discoveryItem = new LinearLayout(context);
-        discoveryItem.setGravity(Gravity.CENTER_VERTICAL);
-        discoveryItem.setBackgroundColor(surfaceColor(context, darkMode));
-        discoveryItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        discoveryItem.addView(label(context, discoveryLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch discoveryToggle = new Switch(context);
-        discoveryToggle.setContentDescription(discoveryLabel);
-        discoveryToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        discoveryToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        discoveryToggle.setChecked(prefs.getBoolean(HIDE_DISCOVERY, true));
-        discoveryToggle.setOnCheckedChangeListener((button, checked) -> {
-            if (prefs.getBoolean(HIDE_DISCOVERY, true) == checked) return;
-            prefs.edit().putBoolean(HIDE_DISCOVERY, checked).apply();
-            discoveryChanged[0] = true;
-        });
-        discoveryItem.addView(discoveryToggle);
-        discoveryItem.setOnClickListener(view -> discoveryToggle.setChecked(!discoveryToggle.isChecked()));
-        list.addView(discoveryItem, new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
-        }
         if ((features & FEATURE_REACTION) != 0) {
         LinearLayout item = new LinearLayout(context);
         item.setGravity(Gravity.CENTER_VERTICAL);
@@ -825,6 +800,31 @@ public final class NezumiSettings {
         deliveryItem.addView(deliveryToggle);
         deliveryItem.setOnClickListener(view -> deliveryToggle.setChecked(!deliveryToggle.isChecked()));
         list.addView(deliveryItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        }
+        if ((features & FEATURE_DISCOVERY) != 0) {
+        addGroup(list, context, vietnamese ? "Điều hướng" : "Navigation", darkMode);
+        LinearLayout discoveryItem = new LinearLayout(context);
+        discoveryItem.setGravity(Gravity.CENTER_VERTICAL);
+        discoveryItem.setBackgroundColor(surfaceColor(context, darkMode));
+        discoveryItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
+        discoveryItem.addView(label(context, discoveryLabel, darkMode),
+            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        Switch discoveryToggle = new Switch(context);
+        discoveryToggle.setContentDescription(discoveryLabel);
+        discoveryToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
+        discoveryToggle.setTrackTintList(new ColorStateList(
+            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
+            new int[] { BLUE, 0xFFBDBDBD }));
+        discoveryToggle.setChecked(prefs.getBoolean(HIDE_DISCOVERY, true));
+        discoveryToggle.setOnCheckedChangeListener((button, checked) -> {
+            if (prefs.getBoolean(HIDE_DISCOVERY, true) == checked) return;
+            prefs.edit().putBoolean(HIDE_DISCOVERY, checked).apply();
+            discoveryChanged[0] = true;
+        });
+        discoveryItem.addView(discoveryToggle);
+        discoveryItem.setOnClickListener(view -> discoveryToggle.setChecked(!discoveryToggle.isChecked()));
+        list.addView(discoveryItem, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
         }
         if ((features & FEATURE_MEDIA_BOX) != 0) {
         addGroup(list, context, vietnamese ? "Hội thoại" : "Conversation", darkMode);
