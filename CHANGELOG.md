@@ -1,3 +1,9 @@
+## [1.5.0-dev.3](https://github.com/Nezumi-2711/morphe-patches/compare/v1.5.0-dev.2...v1.5.0-dev.3) (2026-11-09)
+
+### ✨ New Features
+
+* **zalo:** add hide business box patch ([342b58e](https://github.com/Nezumi-2711/morphe-patches/commit/342b58e15f60aeb960a01512299d1af2b57aa400))
+
 ## [1.5.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/compare/v1.5.0-dev.1...v1.5.0-dev.2) (2026-11-09)
 
 ### ✨ New Features
