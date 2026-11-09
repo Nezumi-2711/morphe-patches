@@ -6,7 +6,7 @@
 
 ### ✨ New Features
 
-* **zalo:** label retained recalled messages ([a79c4b2](https://github.com/Nezumi-2711/morphe-patches/commit/a79c4b20172879a5587150442c9e36635f08764e))
+* **zalo:** add "Keep recalled messages" patch to preserve received messages and locally available photos after they are recalled ([a79c4b2](https://github.com/Nezumi-2711/morphe-patches/commit/a79c4b20172879a5587150442c9e36635f08764e))
 
 ## [1.4.0](https://github.com/Nezumi-2711/morphe-patches/compare/v1.3.0...v1.4.0) (2026-11-05)
 
