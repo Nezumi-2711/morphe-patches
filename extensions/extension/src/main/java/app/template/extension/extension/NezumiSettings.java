@@ -47,6 +47,7 @@ public final class NezumiSettings {
     private static final String HIDE_READ_RECEIPTS = "hide_read_receipts";
     private static final String HIDE_DELIVERY_RECEIPTS = "hide_delivery_receipts";
     private static final String HIDE_MEDIA_BOX = "hide_media_box";
+    private static final String HIDE_BUSINESS_BOX = "hide_business_box";
     private static final String KEEP_RECALLED_MESSAGES = "keep_recalled_messages";
     private static final String HIDE_ONLINE_STATUS = "hide_online_status";
     private static final String HIDE_DISCOVERY = "hide_discovery";
@@ -61,6 +62,7 @@ public final class NezumiSettings {
     private static final int FEATURE_READ_RECEIPTS = 1 << 2;
     private static final int FEATURE_DELIVERY_RECEIPTS = 1 << 3;
     private static final int FEATURE_MEDIA_BOX = 1 << 4;
+    private static final int FEATURE_BUSINESS_BOX = 1 << 10;
     private static final int FEATURE_RECALLED_MESSAGES = 1 << 8;
     private static final int FEATURE_ONLINE_STATUS = 1 << 5;
     private static final int FEATURE_CUSTOM_FONT = 1 << 6;
@@ -113,6 +115,11 @@ public final class NezumiSettings {
     public static boolean isMediaBoxHidden(Context context) {
         return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .getBoolean(HIDE_MEDIA_BOX, false);
+    }
+
+    public static boolean isBusinessBoxHidden(Context context) {
+        return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(HIDE_BUSINESS_BOX, false);
     }
 
     public static boolean isRecalledMessagesKept(Context context) {
@@ -580,6 +587,10 @@ public final class NezumiSettings {
         attach(root, anchor, FEATURE_MEDIA_BOX);
     }
 
+    public static void attachBusinessBox(View root, View anchor) {
+        attach(root, anchor, FEATURE_BUSINESS_BOX);
+    }
+
     public static void attachRecalledMessages(View root, View anchor) {
         attach(root, anchor, FEATURE_RECALLED_MESSAGES);
     }
@@ -832,6 +843,7 @@ public final class NezumiSettings {
         String readLabel = vietnamese ? "Ẩn trạng thái đã xem" : "Hide read receipts";
         String deliveryLabel = vietnamese ? "Ẩn trạng thái đã nhận" : "Hide delivery receipts";
         String mediaBoxLabel = vietnamese ? "Ẩn Media Box" : "Hide Media Box";
+        String businessBoxLabel = vietnamese ? "Ẩn Business Box" : "Hide Business Box";
         String recalledMessagesLabel = vietnamese ? "Giữ tin nhắn đã thu hồi" :
             "Keep recalled messages";
         String onlineLabel = vietnamese ? "Ẩn trạng thái hoạt động" : "Hide activity status";
@@ -1011,8 +1023,10 @@ public final class NezumiSettings {
         list.addView(discoveryItem, new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
         }
-        if ((features & FEATURE_MEDIA_BOX) != 0) {
+        if ((features & (FEATURE_MEDIA_BOX | FEATURE_BUSINESS_BOX)) != 0) {
         addGroup(list, context, vietnamese ? "Hội thoại" : "Conversation", darkMode);
+        }
+        if ((features & FEATURE_MEDIA_BOX) != 0) {
         LinearLayout mediaBoxItem = new LinearLayout(context);
         mediaBoxItem.setGravity(Gravity.CENTER_VERTICAL);
         mediaBoxItem.setBackgroundColor(surfaceColor(context, darkMode));
@@ -1030,6 +1044,27 @@ public final class NezumiSettings {
         mediaBoxItem.addView(mediaBoxToggle);
         mediaBoxItem.setOnClickListener(view -> mediaBoxToggle.setChecked(!mediaBoxToggle.isChecked()));
         list.addView(mediaBoxItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        }
+        if ((features & FEATURE_BUSINESS_BOX) != 0) {
+        LinearLayout businessBoxItem = new LinearLayout(context);
+        businessBoxItem.setGravity(Gravity.CENTER_VERTICAL);
+        businessBoxItem.setBackgroundColor(surfaceColor(context, darkMode));
+        businessBoxItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
+        businessBoxItem.addView(label(context, businessBoxLabel, darkMode),
+            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        Switch businessBoxToggle = new Switch(context);
+        businessBoxToggle.setContentDescription(businessBoxLabel);
+        businessBoxToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
+        businessBoxToggle.setTrackTintList(new ColorStateList(
+            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
+            new int[] { BLUE, 0xFFBDBDBD }));
+        businessBoxToggle.setChecked(prefs.getBoolean(HIDE_BUSINESS_BOX, false));
+        businessBoxToggle.setOnCheckedChangeListener((button, checked) ->
+            prefs.edit().putBoolean(HIDE_BUSINESS_BOX, checked).apply());
+        businessBoxItem.addView(businessBoxToggle);
+        businessBoxItem.setOnClickListener(view -> businessBoxToggle.setChecked(!businessBoxToggle.isChecked()));
+        list.addView(businessBoxItem, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
         }
         if ((features & FEATURE_CUSTOM_FONT) != 0) {
         addGroup(list, context, vietnamese ? "Giao diện" : "Appearance", darkMode);
