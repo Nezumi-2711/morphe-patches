@@ -65,6 +65,7 @@ public final class NezumiSettings {
     private static final int FEATURE_ONLINE_STATUS = 1 << 5;
     private static final int FEATURE_CUSTOM_FONT = 1 << 6;
     private static final int FEATURE_DISCOVERY = 1 << 7;
+    private static final int FEATURE_CUSTOM_SOUNDS = 1 << 9;
     private static final Object ONLINE_LOCK = new Object();
     private static final Set<String> ONLINE_USERS = new HashSet<>();
     private static final Object RECALL_LOCK = new Object();
@@ -595,6 +596,10 @@ public final class NezumiSettings {
         attach(root, anchor, FEATURE_CUSTOM_FONT);
     }
 
+    public static void attachCustomSounds(View root, View anchor) {
+        attach(root, anchor, FEATURE_CUSTOM_SOUNDS);
+    }
+
     private static void attach(View root, View anchor, int feature) {
         if (root == null || anchor == null || !(anchor.getParent() instanceof ViewGroup)) return;
         ViewGroup parent = (ViewGroup) anchor.getParent();
@@ -1051,8 +1056,38 @@ public final class NezumiSettings {
         });
         list.addView(resetFont);
         }
+        if ((features & FEATURE_CUSTOM_SOUNDS) != 0) {
+            addGroup(list, context, vietnamese ? "Âm thanh" : "Sounds", darkMode);
+            addSoundRows(list, context, CustomSounds.NOTIFICATION,
+                vietnamese ? "Âm báo tin nhắn" : "Notification sound", darkMode, vietnamese);
+            addSoundRows(list, context, CustomSounds.RINGTONE,
+                vietnamese ? "Nhạc chuông cuộc gọi" : "Incoming-call ringtone", darkMode, vietnamese);
+        }
         page.show();
         page.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+    }
+
+    private static void addSoundRows(LinearLayout list, Context context, String kind, String title,
+            boolean darkMode, boolean vietnamese) {
+        View item = row(context, title, false, true, darkMode);
+        TextView text = findTextView(item);
+        Runnable update = () -> text.setText(title + (CustomSounds.isSelected(context, kind)
+            ? (vietnamese ? " (đã chọn)" : " (selected)") : ""));
+        update.run();
+        item.setOnClickListener(view -> {
+            if (!CustomSounds.pick(context, kind, update)) {
+                Toast.makeText(context, vietnamese ? "Không thể mở trình chọn âm thanh"
+                    : "Cannot open audio picker", Toast.LENGTH_SHORT).show();
+            }
+        });
+        list.addView(item);
+        View reset = row(context, vietnamese ? "Khôi phục: " + title : "Restore: " + title,
+            false, false, darkMode);
+        reset.setOnClickListener(view -> {
+            CustomSounds.reset(context, kind);
+            update.run();
+        });
+        list.addView(reset);
     }
 
     private static Dialog page(Context context, String title, boolean darkMode) {
