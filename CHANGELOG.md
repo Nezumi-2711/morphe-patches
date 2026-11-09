@@ -1,3 +1,9 @@
+## [1.5.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/compare/v1.5.0-dev.1...v1.5.0-dev.2) (2026-11-09)
+
+### ✨ New Features
+
+* add customizable Zalo notification and ringtone sounds ([b2e1b58](https://github.com/Nezumi-2711/morphe-patches/commit/b2e1b583107199f82e688cd05d5e50188dc8e5f9))
+
 ## [1.5.0-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.4.0...v1.5.0-dev.1) (2026-11-08)
 
 ### 🐛 Bug Fixes

@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.5.0-dev.1",
+  "version": "1.5.0-dev.2",
   "patches": [
     {
       "name": "Chat heads instead of Android bubbles",
@@ -102,6 +102,32 @@
     {
       "name": "Custom font",
       "description": "Choose a font in Nezumi's Settings for Zalo's text, chat messages, info card, options, and contacts.",
+      "default": false,
+      "category": null,
+      "compatiblePackages": [
+        {
+          "packageName": "com.zing.zalo",
+          "name": "Zalo",
+          "description": null,
+          "apkFileType": "APKM",
+          "appIconColor": "#0068FF",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "26.10.02",
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Custom sounds",
+      "description": "Choose custom notification and incoming-call sounds in Nezumi's Settings.",
       "default": false,
       "category": null,
       "compatiblePackages": [
