@@ -34,6 +34,7 @@ import java.lang.reflect.Constructor;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.nio.charset.StandardCharsets;
@@ -48,6 +49,7 @@ public final class NezumiSettings {
     private static final String HIDE_DELIVERY_RECEIPTS = "hide_delivery_receipts";
     private static final String HIDE_MEDIA_BOX = "hide_media_box";
     private static final String HIDE_BUSINESS_BOX = "hide_business_box";
+    private static final String HIDE_FEED_ADS = "hide_feed_ads";
     private static final String KEEP_RECALLED_MESSAGES = "keep_recalled_messages";
     private static final String HIDE_ONLINE_STATUS = "hide_online_status";
     private static final String HIDE_DISCOVERY = "hide_discovery";
@@ -63,6 +65,7 @@ public final class NezumiSettings {
     private static final int FEATURE_DELIVERY_RECEIPTS = 1 << 3;
     private static final int FEATURE_MEDIA_BOX = 1 << 4;
     private static final int FEATURE_BUSINESS_BOX = 1 << 10;
+    private static final int FEATURE_FEED_ADS = 1 << 11;
     private static final int FEATURE_RECALLED_MESSAGES = 1 << 8;
     private static final int FEATURE_ONLINE_STATUS = 1 << 5;
     private static final int FEATURE_CUSTOM_FONT = 1 << 6;
@@ -120,6 +123,28 @@ public final class NezumiSettings {
     public static boolean isBusinessBoxHidden(Context context) {
         return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .getBoolean(HIDE_BUSINESS_BOX, false);
+    }
+
+    public static List filterFeedAds(List items) {
+        if (!isFeedAdsHidden(onlineContext()) || items == null || items.isEmpty()) return items;
+        ArrayList filtered = new ArrayList(items.size());
+        for (Object item : items) {
+            if (!isFeedAdItem(item)) filtered.add(item);
+        }
+        return filtered;
+    }
+
+    private static boolean isFeedAdsHidden(Context context) {
+        return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(HIDE_FEED_ADS, false);
+    }
+
+    private static boolean isFeedAdItem(Object item) {
+        try {
+            return item != null && item.getClass().getField("c").getInt(item) == 0x51;
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return false;
+        }
     }
 
     public static boolean isRecalledMessagesKept(Context context) {
@@ -591,6 +616,10 @@ public final class NezumiSettings {
         attach(root, anchor, FEATURE_BUSINESS_BOX);
     }
 
+    public static void attachFeedAds(View root, View anchor) {
+        attach(root, anchor, FEATURE_FEED_ADS);
+    }
+
     public static void attachRecalledMessages(View root, View anchor) {
         attach(root, anchor, FEATURE_RECALLED_MESSAGES);
     }
@@ -844,6 +873,7 @@ public final class NezumiSettings {
         String deliveryLabel = vietnamese ? "Ẩn trạng thái đã nhận" : "Hide delivery receipts";
         String mediaBoxLabel = vietnamese ? "Ẩn Media Box" : "Hide Media Box";
         String businessBoxLabel = vietnamese ? "Ẩn Business Box" : "Hide Business Box";
+        String feedAdsLabel = vietnamese ? "Ẩn quảng cáo Bảng tin" : "Hide feed ads";
         String recalledMessagesLabel = vietnamese ? "Giữ tin nhắn đã thu hồi" :
             "Keep recalled messages";
         String onlineLabel = vietnamese ? "Ẩn trạng thái hoạt động" : "Hide activity status";
@@ -1021,6 +1051,28 @@ public final class NezumiSettings {
         discoveryItem.addView(discoveryToggle);
         discoveryItem.setOnClickListener(view -> discoveryToggle.setChecked(!discoveryToggle.isChecked()));
         list.addView(discoveryItem, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        }
+        if ((features & FEATURE_FEED_ADS) != 0) {
+        addGroup(list, context, vietnamese ? "Bảng tin" : "Feed", darkMode);
+        LinearLayout feedAdsItem = new LinearLayout(context);
+        feedAdsItem.setGravity(Gravity.CENTER_VERTICAL);
+        feedAdsItem.setBackgroundColor(surfaceColor(context, darkMode));
+        feedAdsItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
+        feedAdsItem.addView(label(context, feedAdsLabel, darkMode),
+            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        Switch feedAdsToggle = new Switch(context);
+        feedAdsToggle.setContentDescription(feedAdsLabel);
+        feedAdsToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
+        feedAdsToggle.setTrackTintList(new ColorStateList(
+            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
+            new int[] { BLUE, 0xFFBDBDBD }));
+        feedAdsToggle.setChecked(prefs.getBoolean(HIDE_FEED_ADS, false));
+        feedAdsToggle.setOnCheckedChangeListener((button, checked) ->
+            prefs.edit().putBoolean(HIDE_FEED_ADS, checked).apply());
+        feedAdsItem.addView(feedAdsToggle);
+        feedAdsItem.setOnClickListener(view -> feedAdsToggle.setChecked(!feedAdsToggle.isChecked()));
+        list.addView(feedAdsItem, new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
         }
         if ((features & (FEATURE_MEDIA_BOX | FEATURE_BUSINESS_BOX)) != 0) {
