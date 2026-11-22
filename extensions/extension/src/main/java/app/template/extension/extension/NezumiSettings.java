@@ -913,7 +913,7 @@ public final class NezumiSettings {
         return text;
     }
 
-    private static boolean isVietnamese(Context context) {
+    static boolean isVietnamese(Context context) {
         try {
             Object language = Class.forName("z0r").getField("b").get(null);
             if ("vi".equals(language)) return true;

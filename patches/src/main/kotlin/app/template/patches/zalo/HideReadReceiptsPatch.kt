@@ -1,8 +1,10 @@
 package app.template.patches.zalo
 
 import app.morphe.patcher.Fingerprint
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.fieldAccess
+import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
@@ -13,6 +15,7 @@ import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 
 private const val REQUEST_PACKET_CLASS = "Lcom/zing/zalocore/connection/socket/RequestPacket;"
+private const val MARK_AS_READ = "Lapp/template/extension/extension/MarkAsRead;"
 private const val READ_SETTINGS = "Lapp/template/extension/extension/NezumiSettings;"
 
 private object SeenAckFingerprint : Fingerprint(
@@ -26,10 +29,22 @@ private object SeenAckFingerprint : Fingerprint(
     ),
 )
 
+private object ChatDrawerButtonFingerprint : Fingerprint(
+    definingClass = "Lcom/zing/zalo/ui/chat/ChatView;",
+    returnType = "V",
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
+    parameters = listOf(),
+    filters = listOf(
+        fieldAccess(opcode = Opcode.SGET, name = "zds_ic_list_1_line_24"),
+        methodCall(definingClass = "Landroid/view/View;", name = "bringToFront"),
+    ),
+)
+
 @Suppress("unused")
 val hideReadReceiptsPatch = bytecodePatch(
     name = "Hide read receipts",
-    description = "Keep outgoing read receipts private while retaining delivery ACKs when enabled in Nezumi Settings.",
+    description = "Keep outgoing read receipts private while retaining delivery ACKs when enabled in Nezumi Settings. " +
+        "Adds a Mark as read button to the chat toolbar for sending a read receipt on demand.",
     default = false,
 ) {
     compatibleWith(Compatibility(
@@ -58,6 +73,9 @@ val hideReadReceiptsPatch = bytecodePatch(
         val ackStart = seenAck.implementation!!.instructions.first()
         seenAck.addInstructionsWithLabels(0, """
             if-eqz p2, :nezumi_original_ack
+            invoke-static {}, $MARK_AS_READ->isSeenBypass()Z
+            move-result v0
+            if-nez v0, :nezumi_original_ack
             invoke-static {}, Lcom/zing/zalo/MainApplication;->getAppContext()Landroid/content/Context;
             move-result-object v0
             invoke-static {v0}, $READ_SETTINGS->isReadReceiptsHidden(Landroid/content/Context;)Z
@@ -79,5 +97,15 @@ val hideReadReceiptsPatch = bytecodePatch(
         """.trimIndent(), ExternalLabel("nezumi_original_ack", ackStart))
 
         attachNezumiSettings("attachReadReceipts")
+
+        check(ChatDrawerButtonFingerprint.matchAll(1..1).size == 1)
+        val drawerRefresh = ChatDrawerButtonFingerprint.method
+        check(drawerRefresh.implementation!!.registerCount >= 1)
+        val returns = drawerRefresh.implementation!!.instructions.withIndex()
+            .filter { it.value.opcode == Opcode.RETURN_VOID }.map { it.index }
+        check(returns.isNotEmpty())
+        returns.asReversed().forEach { index ->
+            drawerRefresh.addInstructions(index, "invoke-static {p0}, $MARK_AS_READ->attach(Ljava/lang/Object;)V")
+        }
     }
 }
