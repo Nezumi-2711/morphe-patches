@@ -24,7 +24,7 @@ still require device validation; local APK checks alone do not verify them.
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.6.0-dev.4](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.6.0-dev.4)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;18 patches total
+> **[v1.6.0-dev.5](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.6.0-dev.5)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;18 patches total
 <details open>
 <summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;18 patches</summary>
 <br>
@@ -49,7 +49,7 @@ still require device validation; local APK checks alone do not verify them.
 | [Hide ads in Messages](#hide-ads-in-messages) | Hide Z Instant Ads rows in Zalo's Messages page when enabled in Nezumi Settings. |  |
 | [Hide delivery receipts](#hide-delivery-receipts) | Suppress outgoing message delivery ACKs when enabled in Nezumi Settings. |  |
 | [Hide feed ads](#hide-feed-ads) | Remove sponsored and advertising items from Zalo's user feed when enabled in Nezumi Settings. |  |
-| [Hide read receipts](#hide-read-receipts) | Keep outgoing read receipts private while retaining delivery ACKs when enabled in Nezumi Settings. |  |
+| [Hide read receipts](#hide-read-receipts) | Keep outgoing read receipts private while retaining delivery ACKs when enabled in Nezumi Settings. Adds a Mark as read button to the chat toolbar for sending a read receipt on demand. |  |
 | [Hide text typing](#hide-text-typing) | Hide outgoing text typing in direct and group chats when enabled in Nezumi Settings. |  |
 | [Keep recalled messages](#keep-recalled-messages) | Keep received messages and locally available photos after another user recalls them, when enabled in Nezumi Settings. |  |
 | [Native signature fix](#native-signature-fix) | Allow Zalo 26.11.01 ARM64 to start after patching and re-signing. ARMv7 is not supported. |  |

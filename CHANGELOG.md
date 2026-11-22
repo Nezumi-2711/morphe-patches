@@ -1,3 +1,17 @@
+## [1.6.0-dev.5](https://github.com/Nezumi-2711/morphe-patches/compare/v1.6.0-dev.4...v1.6.0-dev.5) (2026-11-22)
+
+### 🐛 Bug Fixes
+
+* **zalo:** stop hide read receipts from altering message deletion ([82ae3bd](https://github.com/Nezumi-2711/morphe-patches/commit/82ae3bde4dbad8eaec9696e31958a64151cb3044))
+
+### ✨ New Features
+
+* **zalo:** add Mark as read button to chat toolbar ([84528a2](https://github.com/Nezumi-2711/morphe-patches/commit/84528a2b074faf9a7d942769f98814b2fe2de305))
+
+### 🚀 Updated App Support
+
+* **zalo:** add support for Zalo 26.11.01 ([7c310d9](https://github.com/Nezumi-2711/morphe-patches/commit/7c310d90d9c7de0b162db4cd2fdf675d1a877f24))
+
 ## [1.6.0-dev.4](https://github.com/Nezumi-2711/morphe-patches/compare/v1.6.0-dev.3...v1.6.0-dev.4) (2026-11-13)
 
 ### ✨ New Features
