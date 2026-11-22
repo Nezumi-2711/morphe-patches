@@ -3,7 +3,6 @@ package app.template.patches.zalo
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.fieldAccess
-import app.morphe.patcher.literal
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
@@ -27,17 +26,6 @@ private object SeenAckFingerprint : Fingerprint(
     ),
 )
 
-private object ReadMarkerFingerprint : Fingerprint(
-    returnType = "V",
-    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
-    filters = listOf(
-        literal(10309),
-        literal(205),
-        literal(10305),
-        literal(118),
-    ),
-)
-
 @Suppress("unused")
 val hideReadReceiptsPatch = bytecodePatch(
     name = "Hide read receipts",
@@ -57,7 +45,6 @@ val hideReadReceiptsPatch = bytecodePatch(
 
     execute {
         check(SeenAckFingerprint.matchAll(1..1).size == 1)
-        check(ReadMarkerFingerprint.matchAll(1..1).size == 1)
 
         val seenAck = SeenAckFingerprint.method
         check(seenAck.parameters.size == 5 && seenAck.parameters.map { it.type }.take(4) ==
@@ -90,21 +77,6 @@ val hideReadReceiptsPatch = bytecodePatch(
             :nezumi_delivery_ack
             const/16 p2, 0x0
         """.trimIndent(), ExternalLabel("nezumi_original_ack", ackStart))
-
-        val readMarker = ReadMarkerFingerprint.method
-        check(readMarker.parameters.size == 6 && readMarker.parameters.map { it.type }.take(4) ==
-            listOf("Ljava/util/List;", "Z", "Z", "Z"))
-        check(readMarker.implementation!!.registerCount >= 16)
-        val markerStart = readMarker.implementation!!.instructions.first()
-        readMarker.addInstructionsWithLabels(0, """
-            if-eqz p2, :nezumi_original_marker
-            invoke-static {}, Lcom/zing/zalo/MainApplication;->getAppContext()Landroid/content/Context;
-            move-result-object v0
-            invoke-static {v0}, $READ_SETTINGS->isReadReceiptsHidden(Landroid/content/Context;)Z
-            move-result v0
-            if-eqz v0, :nezumi_original_marker
-            const/16 p2, 0x0
-        """.trimIndent(), ExternalLabel("nezumi_original_marker", markerStart))
 
         attachNezumiSettings("attachReadReceipts")
     }
