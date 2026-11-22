@@ -150,8 +150,9 @@ public final class NezumiSettings {
             OA_ATTEMPTS.clear();
         }
         try {
-            Object repository = Class.forName("tg0.p").getMethod("a").invoke(null);
-            repository.getClass().getMethod("O").invoke(repository);
+            // MessageManager singleton p8g.w(); M() reschedules the tab message list rebuild.
+            Object repository = Class.forName("p8g").getMethod("w").invoke(null);
+            repository.getClass().getMethod("M").invoke(repository);
         } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
             android.util.Log.w("NezumiOA", "Messages refresh unavailable");
         }
@@ -162,9 +163,10 @@ public final class NezumiSettings {
         try {
             String uid = (String) conversation.getClass().getField("b").get(conversation);
             if (uid == null || uid.isEmpty() || uid.startsWith("group_")) return false;
-            Object profile = Class.forName("rz.p3").getMethod("l", String.class).invoke(null, uid);
+            Object profile = Class.forName("huj").getMethod("l", String.class).invoke(null, uid);
             if (profile == null) profile = conversation.getClass().getField("a").get(conversation);
-            return profile != null && Boolean.TRUE.equals(profile.getClass().getMethod("P1").invoke(profile));
+            if (profile == null) return false;
+            return Boolean.TRUE.equals(profile.getClass().getMethod("B2").invoke(profile));
         } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
             return false;
         }
@@ -175,7 +177,7 @@ public final class NezumiSettings {
         ArrayList filtered = new ArrayList(items.size());
         for (Object item : items) {
             try {
-                if (item != null && Class.forName("l20.d").isInstance(item)
+                if (item != null && Class.forName("r24").isInstance(item)
                         && hideOrMuteOfficialAccount(item.getClass().getField("f").get(item))) continue;
             } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) { }
             filtered.add(item);
@@ -203,8 +205,8 @@ public final class NezumiSettings {
             OA_ATTEMPTS.put(key, now);
         }
         try {
-            Object dispatcher = Class.forName("bv.b").getMethod("e").invoke(null);
-            Object nativeRepository = dispatcher.getClass().getField("g").get(dispatcher);
+            Object dispatcher = Class.forName("kc7").getMethod("e").invoke(null);
+            Object nativeRepository = dispatcher.getClass().getField("j").get(dispatcher);
                 Object existing = nativeRepository.getClass().getMethod("b", String.class).invoke(nativeRepository, uid);
                 if (existing == null || existing.getClass().getField("d").getLong(existing) >= 0
                     || existing.getClass().getField("e").getInt(existing) != 0) {
@@ -212,14 +214,14 @@ public final class NezumiSettings {
                     "com.zing.zalo.comm.mutechatsetting.data.model.MuteSettingItem");
                 Object item = itemClass.getConstructor(int.class, int.class, long.class, long.class,
                     String.class).newInstance(1, 0, System.currentTimeMillis(), -1L, uid);
-                Class<?> trackingClass = Class.forName("bx.d");
+                Class<?> trackingClass = Class.forName("v3h");
                 Object tracking = Enum.valueOf((Class) trackingClass, "TAB_MSG");
-                Class<?> entryClass = Class.forName("bx.a");
+                Class<?> entryClass = Class.forName("t1h");
                 Object entry = Enum.valueOf((Class) entryClass, "MUTE_SHEET");
-                Class<?> eventClass = Class.forName("dx.a");
+                Class<?> eventClass = Class.forName("ap");
                 Object event = eventClass.getConstructor(itemClass, trackingClass, entryClass)
                     .newInstance(item, tracking, entry);
-                Object flow = dispatcher.getClass().getMethod("s0", Object.class)
+                Object flow = dispatcher.getClass().getMethod("p1", Object.class)
                     .invoke(dispatcher, event);
                 collectNativeFlow(flow);
                 android.util.Log.i("NezumiOA", "Permanent mute dispatched");
@@ -231,15 +233,31 @@ public final class NezumiSettings {
     }
 
     private static void collectNativeFlow(Object flow) throws ReflectiveOperationException {
-        Class<?> contextClass = Class.forName("qa2.i");
         Object ioContext = Class.forName("kotlinx.coroutines.scheduling.DefaultIoScheduler")
             .getField("c").get(null);
         Class<?> scopeClass = Class.forName("kotlinx.coroutines.CoroutineScope");
-        Object scope = Class.forName("kotlinx.coroutines.CoroutineScopeKt")
-            .getMethod("a", contextClass).invoke(null, ioContext);
+        Object scope = null;
+        for (java.lang.reflect.Method method : Class.forName("kotlinx.coroutines.CoroutineScopeKt").getMethods()) {
+            Class<?>[] types = method.getParameterTypes();
+            if (java.lang.reflect.Modifier.isStatic(method.getModifiers()) && types.length == 1
+                && types[0].isInstance(ioContext) && scopeClass.isAssignableFrom(method.getReturnType())) {
+                scope = method.invoke(null, ioContext);
+                break;
+            }
+        }
         Class<?> flowClass = Class.forName("kotlinx.coroutines.flow.Flow");
         Class<?> flowKtClass = Class.forName("kotlinx.coroutines.flow.FlowKt");
-        flowKtClass.getMethod("E", flowClass, scopeClass).invoke(null, flow, scope);
+        Class<?> jobClass = Class.forName("kotlinx.coroutines.Job");
+        for (java.lang.reflect.Method method : flowKtClass.getMethods()) {
+            Class<?>[] types = method.getParameterTypes();
+            if (scope != null && java.lang.reflect.Modifier.isStatic(method.getModifiers())
+                && types.length == 2 && types[0] == flowClass && types[1] == scopeClass
+                && jobClass.isAssignableFrom(method.getReturnType())) {
+                method.invoke(null, flow, scope);
+                return;
+            }
+        }
+        throw new NoSuchMethodException("launchIn");
     }
 
     public static List filterFeedAds(List items) {
@@ -392,9 +410,18 @@ public final class NezumiSettings {
             Object message = base.getMethod("getMessage").invoke(row);
             Object binding = base.getField("j").get(row);
             if (message == null || binding == null) return;
-            base.getMethod("p2", Class.forName("j20.q"), Class.forName("zg1.a"))
-                .invoke(row, message, binding);
-            base.getField("j1").setBoolean(row, false);
+            java.lang.reflect.Method bind = null;
+            for (java.lang.reflect.Method candidate : base.getMethods()) {
+                Class<?>[] types = candidate.getParameterTypes();
+                if (candidate.getName().equals("p2") && types.length == 2
+                    && types[0].isInstance(message) && types[1].isInstance(binding)) {
+                    bind = candidate;
+                    break;
+                }
+            }
+            if (bind == null) throw new NoSuchMethodException("p2");
+            bind.invoke(row, message, binding);
+            // p2 rebinds and requests layout on its own.
             row.requestLayout();
             row.invalidate();
         } catch (ReflectiveOperationException | RuntimeException ignored) {
@@ -665,15 +692,11 @@ public final class NezumiSettings {
     }
 
     private static void refreshDiscoveryTabs() {
-        String[] configurationClasses = { "if1.y", "kj1.v" };
-        for (String className : configurationClasses) {
-            try {
-                Object configuration = Class.forName(className).getMethod("h").invoke(null);
-                configuration.getClass().getMethod("o").invoke(configuration);
-                configuration.getClass().getMethod("q").invoke(configuration);
-                return;
-            } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
-            }
+        try {
+            Object configuration = Class.forName("y5f").getMethod("h").invoke(null);
+            configuration.getClass().getMethod("o").invoke(configuration);
+            configuration.getClass().getMethod("q").invoke(configuration);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
         }
     }
 
@@ -892,8 +915,7 @@ public final class NezumiSettings {
 
     private static boolean isVietnamese(Context context) {
         try {
-            Object language = Class.forName("com.google.android.play.core.appupdate.b")
-                    .getField("b").get(null);
+            Object language = Class.forName("z0r").getField("b").get(null);
             if ("vi".equals(language)) return true;
             if ("en".equals(language)) return false;
         } catch (ReflectiveOperationException | SecurityException ignored) { }

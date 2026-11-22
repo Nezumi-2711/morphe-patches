@@ -20,7 +20,6 @@ private object SeenAckFingerprint : Fingerprint(
     returnType = "V",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     filters = listOf(
-        string("ackMsgList"),
         string("seen"),
         string("data"),
         fieldAccess(opcode = Opcode.IPUT_SHORT, definingClass = REQUEST_PACKET_CLASS, name = "g"),
@@ -50,7 +49,7 @@ val hideReadReceiptsPatch = bytecodePatch(
         packageName = "com.zing.zalo",
         apkFileType = ApkFileType.APKM,
         appIconColor = 0x0068FF,
-        targets = listOf(AppTarget(version = "26.10.02")),
+        targets = listOf(AppTarget(version = "26.11.01")),
     ))
 
     dependsOn(nativeSignaturePatch)
@@ -68,7 +67,7 @@ val hideReadReceiptsPatch = bytecodePatch(
             it.parameterTypes == listOf("Ljava/lang/Object;") && it.returnType == "V" &&
                 it.accessFlags and AccessFlags.PUBLIC.value != 0
         }
-        check(seenAck.implementation!!.registerCount >= 14)
+        check(seenAck.implementation!!.registerCount >= 8)
         val ackStart = seenAck.implementation!!.instructions.first()
         seenAck.addInstructionsWithLabels(0, """
             if-eqz p2, :nezumi_original_ack
