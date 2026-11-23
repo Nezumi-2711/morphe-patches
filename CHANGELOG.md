@@ -1,3 +1,9 @@
+## [1.7.0-dev.3](https://github.com/Nezumi-2711/morphe-patches/compare/v1.7.0-dev.2...v1.7.0-dev.3) (2026-11-23)
+
+### 🐛 Bug Fixes
+
+* **zalo:** keep OA hidden when an incoming message caches a blank profile ([861947a](https://github.com/Nezumi-2711/morphe-patches/commit/861947a60c183d4fb0e5d0c70ca53a3d513e3cb9))
+
 ## [1.7.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/compare/v1.7.0-dev.1...v1.7.0-dev.2) (2026-11-23)
 
 ### 🐛 Bug Fixes
