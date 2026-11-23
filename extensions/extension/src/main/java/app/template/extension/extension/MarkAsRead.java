@@ -132,7 +132,7 @@ public final class MarkAsRead {
             Log.w(TAG, "Unable to clear local unread state", error);
         }
         if (ok) {
-            boolean vietnamese = NezumiSettings.isVietnamese(context);
+            boolean vietnamese = ZaloEnv.isVietnamese(context);
             new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context,
                 vietnamese ? "Đã đánh dấu đã xem" : "Marked as read", Toast.LENGTH_SHORT).show());
         }
