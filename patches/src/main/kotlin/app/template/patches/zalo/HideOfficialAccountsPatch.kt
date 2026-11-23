@@ -28,7 +28,7 @@ private object MessagesListFingerprint : Fingerprint(
 @Suppress("unused")
 val hideOfficialAccountsPatch = bytecodePatch(
     name = "Hide OA accounts in Messages",
-    description = "Hide OA accounts in Messages and mute them permanently by default.",
+    description = "Hide OA accounts in Messages and/or mute their notifications. Both options are configurable in Nezumi Settings.",
     default = false,
 ) {
     compatibleWith(Compatibility(
