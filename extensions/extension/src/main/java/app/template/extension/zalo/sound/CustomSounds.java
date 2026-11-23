@@ -1,4 +1,4 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.sound;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -16,14 +16,14 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import app.template.extension.zalo.settings.NezumiPrefs;
+
 public final class CustomSounds extends Fragment {
-    private static final String PREFS = "nezumi_settings";
     private static final String KIND = "sound_kind";
     public static final String NOTIFICATION = "custom_notification_sound";
     public static final String RINGTONE = "custom_ringtone";
@@ -36,7 +36,7 @@ public final class CustomSounds extends Fragment {
 
     private static File selectedFile(Context context, String kind) {
         if (context == null || !validKind(kind)) return null;
-        String name = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(kind, null);
+        String name = NezumiPrefs.of(context).getString(kind, null);
         if (name == null || !name.startsWith("nezumi-sound-") || name.contains("/")) return null;
         File file = new File(context.getFilesDir(), name);
         return file.isFile() && file.length() > 0 ? file : null;
@@ -106,7 +106,7 @@ public final class CustomSounds extends Fragment {
 
     public static void reset(Context context, String kind) {
         File previous = selectedFile(context, kind);
-        if (context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(kind).commit()
+        if (NezumiPrefs.of(context).edit().remove(kind).commit()
                 && previous != null) previous.delete();
     }
 
@@ -209,7 +209,7 @@ public final class CustomSounds extends Fragment {
             } finally {
                 probe.release();
             }
-            SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            SharedPreferences prefs = NezumiPrefs.of(context);
             File previous = selectedFile(context, kind);
             if (!prefs.edit().putString(kind, file.getName()).commit()) throw new IOException("Sound not saved");
             saved = true;
@@ -218,4 +218,4 @@ public final class CustomSounds extends Fragment {
             if (!saved) file.delete();
         }
     }
-}
+}

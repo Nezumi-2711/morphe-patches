@@ -1,4 +1,4 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.appearance;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -9,14 +9,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Typeface;
-import android.text.TextPaint;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
+import android.text.TextPaint;
 import android.util.Log;
 import android.widget.Toast;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -24,8 +23,9 @@ import java.util.Locale;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import app.template.extension.zalo.settings.NezumiPrefs;
+
 public final class CustomFont extends Fragment {
-    private static final String PREFS = "nezumi_settings";
     private static final String FONT = "custom_font";
     private static final String TAG = "nezumi-font-picker";
     private static final int PICK_FONT = 1042;
@@ -37,7 +37,7 @@ public final class CustomFont extends Fragment {
 
     public static Typeface getTypeface(Context context, int fontStyle) {
         if (context == null) return null;
-        String path = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(FONT, null);
+        String path = NezumiPrefs.of(context).getString(FONT, null);
         if (path == null) return null;
         synchronized (CustomFont.class) {
             if (!path.equals(cachedPath)) {
@@ -67,7 +67,7 @@ public final class CustomFont extends Fragment {
     }
 
     public static void diagnoseRichItem(Context context, Typeface original, Typeface requested, Typeface actual) {
-        boolean selected = context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).contains(FONT);
+        boolean selected = context != null && NezumiPrefs.of(context).contains(FONT);
         boolean loaded = getTypeface(context, 0) != null;
         Log.i(TAG, "rich-item selected=" + selected + " loaded=" + loaded
                 + " changed=" + (requested != original) + " applied=" + (actual == requested));
@@ -120,7 +120,7 @@ public final class CustomFont extends Fragment {
     }
 
     public static boolean isSelected(Context context) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).contains(FONT);
+        return NezumiPrefs.of(context).contains(FONT);
     }
 
     public static void enableSelectedFont(Context context, AtomicBoolean fontEnabled) {
@@ -133,7 +133,7 @@ public final class CustomFont extends Fragment {
     }
 
     public static void reset(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        SharedPreferences prefs = NezumiPrefs.of(context);
         String previous = prefs.getString(FONT, null);
         prefs.edit().remove(FONT).apply();
         synchronized (CustomFont.class) {
@@ -213,7 +213,7 @@ public final class CustomFont extends Fragment {
                 }
             }
             Typeface.createFromFile(file);
-            SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            SharedPreferences prefs = NezumiPrefs.of(context);
             String previous = prefs.getString(FONT, null);
             if (!prefs.edit().putString(FONT, file.getName()).commit()) throw new IllegalStateException("Font not saved");
             synchronized (CustomFont.class) {

@@ -1,4 +1,4 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.chat;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -9,11 +9,12 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+
+import app.template.extension.zalo.shared.ZaloEnv;
 
 /**
  * "Mark as read" toolbar button shown in the chat screen while Hide read receipts is enabled.
@@ -45,7 +46,7 @@ public final class MarkAsRead {
 
             Object presenter = fieldValue(chatView, "H1");
             Context context = container.getContext();
-            boolean show = presenter != null && NezumiSettings.isReadReceiptsHidden(context)
+            boolean show = presenter != null && ChatOptions.isReadReceiptsHidden(context)
                 && !Boolean.TRUE.equals(presenter.getClass().getMethod("I3").invoke(presenter))
                 && drawer.getVisibility() == View.VISIBLE;
             if (!show) {
@@ -132,7 +133,7 @@ public final class MarkAsRead {
             Log.w(TAG, "Unable to clear local unread state", error);
         }
         if (ok) {
-            boolean vietnamese = NezumiSettings.isVietnamese(context);
+            boolean vietnamese = ZaloEnv.isVietnamese(context);
             new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context,
                 vietnamese ? "Đã đánh dấu đã xem" : "Marked as read", Toast.LENGTH_SHORT).show());
         }

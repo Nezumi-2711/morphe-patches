@@ -1,4 +1,4 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.sound;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -7,7 +7,6 @@ import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.OpenableColumns;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 

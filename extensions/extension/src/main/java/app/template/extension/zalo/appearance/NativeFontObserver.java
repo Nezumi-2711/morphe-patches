@@ -1,4 +1,4 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.appearance;
 
 import android.app.Activity;
 import android.app.Application;
@@ -6,15 +6,14 @@ import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Spanned;
-import android.text.style.MetricAffectingSpan;
 import android.text.method.PasswordTransformationMethod;
+import android.text.style.MetricAffectingSpan;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.TextView;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
