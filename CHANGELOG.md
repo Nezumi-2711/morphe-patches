@@ -1,3 +1,10 @@
+## [1.6.0-dev.6](https://github.com/Nezumi-2711/morphe-patches/compare/v1.6.0-dev.5...v1.6.0-dev.6) (2026-11-23)
+
+### ✨ New Features
+
+* **zalo:** split OA hide and mute into separate options ([3e0fe87](https://github.com/Nezumi-2711/morphe-patches/commit/3e0fe870d47bf42d03c57bcfcbac23cf0eb15b29))
+* **zalo:** unlock original photo quality and select it by default ([3e518e2](https://github.com/Nezumi-2711/morphe-patches/commit/3e518e230a95cecec954b16cca4b81556f353425))
+
 ## [1.6.0-dev.5](https://github.com/Nezumi-2711/morphe-patches/compare/v1.6.0-dev.4...v1.6.0-dev.5) (2026-11-22)
 
 ### 🐛 Bug Fixes

@@ -24,9 +24,9 @@ still require device validation; local APK checks alone do not verify them.
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.6.0-dev.5](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.6.0-dev.5)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;18 patches total
+> **[v1.6.0-dev.6](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.6.0-dev.6)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;19 patches total
 <details open>
-<summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;18 patches</summary>
+<summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;19 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -45,7 +45,7 @@ still require device validation; local APK checks alone do not verify them.
 | [Hide Business Box in Messages](#hide-business-box-in-messages) | Hide the Business Box row in Messages when enabled in Nezumi Settings. |  |
 | [Hide Discovery tab](#hide-discovery-tab) | Remove the Discovery tab from Zalo's main navigation. |  |
 | [Hide Media Box in Messages](#hide-media-box-in-messages) | Hide the Media Box row in Messages when enabled in Nezumi Settings. |  |
-| [Hide OA accounts in Messages](#hide-oa-accounts-in-messages) | Hide OA accounts in Messages and mute them permanently by default. |  |
+| [Hide OA accounts in Messages](#hide-oa-accounts-in-messages) | Hide OA accounts in Messages and/or mute their notifications. Both options are configurable in Nezumi Settings. |  |
 | [Hide ads in Messages](#hide-ads-in-messages) | Hide Z Instant Ads rows in Zalo's Messages page when enabled in Nezumi Settings. |  |
 | [Hide delivery receipts](#hide-delivery-receipts) | Suppress outgoing message delivery ACKs when enabled in Nezumi Settings. |  |
 | [Hide feed ads](#hide-feed-ads) | Remove sponsored and advertising items from Zalo's user feed when enabled in Nezumi Settings. |  |
@@ -53,6 +53,7 @@ still require device validation; local APK checks alone do not verify them.
 | [Hide text typing](#hide-text-typing) | Hide outgoing text typing in direct and group chats when enabled in Nezumi Settings. |  |
 | [Keep recalled messages](#keep-recalled-messages) | Keep received messages and locally available photos after another user recalls them, when enabled in Nezumi Settings. |  |
 | [Native signature fix](#native-signature-fix) | Allow Zalo 26.11.01 ARM64 to start after patching and re-signing. ARMv7 is not supported. |  |
+| [Send photos in original quality](#send-photos-in-original-quality) | Unlocks Zalo's native original-photo quality option and selects it by default while preserving its normal quality picker. |  |
 | [View online status privately](#view-online-status-privately) | Hide your activity and show confirmed current-online status in the individual chat header when available. |  |
 
 </details>
