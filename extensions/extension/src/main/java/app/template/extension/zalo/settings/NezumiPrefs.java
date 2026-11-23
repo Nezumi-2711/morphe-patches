@@ -17,6 +17,7 @@ public final class NezumiPrefs {
     public static final String HIDE_OA_MESSAGES = "hide_oa_messages";
     public static final String MUTE_OA_MESSAGES = "mute_oa_messages";
     public static final String OA_MUTED_UIDS = "oa_muted_uids:";
+    public static final String OA_KNOWN_UIDS = "oa_known_uids:";
     public static final String HIDE_MESSAGE_ADS = "hide_message_ads";
     public static final String HIDE_FEED_ADS = "hide_feed_ads";
     public static final String KEEP_RECALLED_MESSAGES = "keep_recalled_messages";

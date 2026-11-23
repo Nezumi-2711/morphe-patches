@@ -46,18 +46,46 @@ public final class OfficialAccounts {
         }
     }
 
-    private static boolean isOfficialAccount(Object conversation) {
-        if (conversation == null) return false;
+    private static boolean hasOfficialFlag(Object profile) {
+        if (profile == null) return false;
         try {
-            String uid = (String) conversation.getClass().getField("b").get(conversation);
-            if (uid == null || uid.isEmpty() || uid.startsWith("group_")) return false;
-            Object profile = Class.forName("huj").getMethod("l", String.class).invoke(null, uid);
-            if (profile == null) profile = conversation.getClass().getField("a").get(conversation);
-            if (profile == null) return false;
             return Boolean.TRUE.equals(profile.getClass().getMethod("B2").invoke(profile));
         } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
             return false;
         }
+    }
+
+    private static String conversationUid(Object conversation) {
+        try {
+            return (String) conversation.getClass().getField("b").get(conversation);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * An incoming message for an uncached sender makes Zalo's notification processor
+     * (huj.n) cache a blank ContactProfile whose type is 0, so a single profile source
+     * can temporarily deny that a known OA is an OA. Both profile sources are checked
+     * and every confirmed OA uid is remembered per account.
+     */
+    private static boolean isOfficialAccount(Object conversation, String uid, Set<String> known) {
+        if (uid == null || uid.isEmpty() || uid.startsWith("group_")) return false;
+        if (known.contains(uid)) return true;
+        Object cached = null;
+        try {
+            cached = Class.forName("huj").getMethod("l", String.class).invoke(null, uid);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) { }
+        if (hasOfficialFlag(cached)) return true;
+        try {
+            return hasOfficialFlag(conversation.getClass().getField("a").get(conversation));
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+            return false;
+        }
+    }
+
+    private static String oaKnownKey(String account) {
+        return NezumiPrefs.OA_KNOWN_UIDS + (account == null ? "" : account);
     }
 
     public static List filterOfficialAccounts(List items) {
@@ -69,17 +97,24 @@ public final class OfficialAccounts {
         if (!mute) unmuteTrackedOfficialAccounts(context, account);
         if (!hide && !mute) return items;
         ArrayList filtered = hide ? new ArrayList(items.size()) : null;
+        SharedPreferences prefs = NezumiPrefs.of(context);
+        Set<String> stored = prefs.getStringSet(oaKnownKey(account), null);
+        Set<String> known = stored == null ? new HashSet<>() : new HashSet<>(stored);
+        boolean learned = false;
         for (Object item : items) {
             boolean official = false;
             try {
                 if (item != null && Class.forName("r24").isInstance(item)) {
                     Object conversation = item.getClass().getField("f").get(item);
-                    official = isOfficialAccount(conversation);
+                    String uid = conversation == null ? null : conversationUid(conversation);
+                    official = conversation != null && isOfficialAccount(conversation, uid, known);
+                    if (official && known.add(uid)) learned = true;
                     if (official && mute) muteOfficialAccount(context, account, conversation);
                 }
             } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) { }
             if (hide && !official) filtered.add(item);
         }
+        if (learned) prefs.edit().putStringSet(oaKnownKey(account), known).apply();
         return hide ? filtered : items;
     }
 
