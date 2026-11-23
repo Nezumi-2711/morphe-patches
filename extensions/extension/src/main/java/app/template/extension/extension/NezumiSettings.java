@@ -1,5 +1,6 @@
 package app.template.extension.extension;
 
+import android.animation.ValueAnimator;
 import android.app.Dialog;
 import android.app.Activity;
 import android.content.Context;
@@ -12,6 +13,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
+import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -23,10 +25,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -61,6 +63,9 @@ public final class NezumiSettings {
     private static final String SAVED_ONLINE_SHARING = "saved_online_sharing";
     private static final String ENTRY_TAG = "nezumi-settings-entry";
     private static final int BLUE = 0xFF0068FF;
+    private static final int BLUE_DARK = 0xFF3D8BFF;
+    private static final int ROW_TITLE_KEY = 0x7E4E5A01;
+    private static final int ROW_DIVIDER_KEY = 0x7E4E5A02;
     private static final int HEADER_BLUE = 0xFF008DFA;
     private static final int DIVIDER = 0xFFE9EAEC;
     private static final int SECTION = 0xFFF2F3F5;
@@ -886,7 +891,7 @@ public final class NezumiSettings {
         int titleId = context.getResources().getIdentifier("list_title", "id", context.getPackageName());
         View title = titleId == 0 ? null : anchor.findViewById(titleId);
         TextView nativeTitle = title instanceof TextView ? (TextView) title : null;
-        View entry = row(context, "Nezumi's Settings", true, true, darkMode, nativeTitle);
+        View entry = row(context, "Nezumi's Settings", vectorIcon(context), true, darkMode, nativeTitle, 49);
         Drawable background = anchor.getBackground();
         if (background != null && background.getConstantState() != null) {
             entry.setBackground(background.getConstantState().newDrawable(context.getResources()).mutate());
@@ -1005,12 +1010,13 @@ public final class NezumiSettings {
         return "vi".equals(context.getResources().getConfiguration().locale.getLanguage());
     }
 
-    private static View row(Context context, String title, boolean icon, boolean chevron, boolean darkMode) {
-        return row(context, title, icon, chevron, darkMode, null);
+    private static View row(Context context, String title, Drawable icon, boolean chevron,
+                            boolean darkMode, TextView nativeTitle) {
+        return row(context, title, icon, chevron, darkMode, nativeTitle, 56);
     }
 
-    private static View row(Context context, String title, boolean icon, boolean chevron,
-                            boolean darkMode, TextView nativeTitle) {
+    private static View row(Context context, String title, Drawable icon, boolean chevron,
+                            boolean darkMode, TextView nativeTitle, int heightDp) {
         LinearLayout wrapper = new LinearLayout(context);
         wrapper.setOrientation(LinearLayout.VERTICAL);
         wrapper.setBackgroundColor(surfaceColor(context, darkMode));
@@ -1021,9 +1027,9 @@ public final class NezumiSettings {
         if (context.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, ripple, true)) {
             content.setBackgroundResource(ripple.resourceId);
         }
-        if (icon) {
+        if (icon != null) {
             View leading = new View(context);
-            leading.setBackground(vectorIcon(context));
+            leading.setBackground(icon);
             LinearLayout.LayoutParams leadingParams = new LinearLayout.LayoutParams(dp(context, 24), dp(context, 24));
             leadingParams.rightMargin = dp(context, 18);
             content.addView(leading, leadingParams);
@@ -1036,7 +1042,10 @@ public final class NezumiSettings {
             text.setTextColor(nativeTitle.getTextColors());
             text.setGravity(Gravity.CENTER_VERTICAL);
         }
+        text.setSingleLine(true);
+        text.setEllipsize(android.text.TextUtils.TruncateAt.END);
         content.addView(text, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        wrapper.setTag(ROW_TITLE_KEY, text);
         if (chevron) {
             ImageView trailing = new ImageView(context);
             int chevronId = context.getResources().getIdentifier(
@@ -1054,14 +1063,16 @@ public final class NezumiSettings {
             }
             content.addView(trailing, new LinearLayout.LayoutParams(dp(context, 16), dp(context, 16)));
         }
-        wrapper.addView(content, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 49)));
+        wrapper.addView(content, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, heightDp)));
         View divider = new View(context);
         divider.setBackgroundColor(resourceColor(context, "divider_01",
             darkMode ? 0xFF303030 : DIVIDER));
         LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 1));
-        dividerParams.leftMargin = dp(context, icon ? 50 : 16);
+        // The entry row (49dp) keeps the inset that lines up with Zalo's native list.
+        dividerParams.leftMargin = dp(context, icon == null ? 16 : heightDp < 56 ? 50 : 58);
         wrapper.addView(divider, dividerParams);
+        wrapper.setTag(ROW_DIVIDER_KEY, divider);
         content.setOnClickListener(view -> wrapper.performClick());
         return wrapper;
     }
@@ -1110,6 +1121,7 @@ public final class NezumiSettings {
             "Keep recalled messages";
         String onlineLabel = vietnamese ? "Ẩn trạng thái hoạt động" : "Hide activity status";
         String discoveryLabel = vietnamese ? "Ẩn tab Khám phá" : "Hide Discovery tab";
+        String messageAdsLabel = vietnamese ? "Ẩn quảng cáo trong Messages" : "Hide ads in Messages";
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         Dialog page = page(context, "Nezumi's Settings", darkMode);
         boolean[] discoveryChanged = { false };
@@ -1119,339 +1131,131 @@ public final class NezumiSettings {
         LinearLayout list = page.findViewById(android.R.id.content).findViewWithTag("nezumi-list");
         if (hasChatFeatures) addGroup(list, context, vietnamese ? "Trò chuyện" : "Chat", darkMode);
         if ((features & FEATURE_ONLINE_STATUS) != 0) {
-        LinearLayout onlineItem = new LinearLayout(context);
-        onlineItem.setGravity(Gravity.CENTER_VERTICAL);
-        onlineItem.setBackgroundColor(surfaceColor(context, darkMode));
-        onlineItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        onlineItem.addView(label(context, onlineLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch onlineToggle = new Switch(context);
-        onlineToggle.setContentDescription(onlineLabel);
-        onlineToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        onlineToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        onlineToggle.setChecked(prefs.getBoolean(HIDE_ONLINE_STATUS, false));
-        onlineToggle.setOnCheckedChangeListener((button, checked) -> {
-            if (prefs.getBoolean(HIDE_ONLINE_STATUS, false) == checked) return;
-            boolean originalSharing = originalOnlineSharing();
-            boolean hasSavedSharing = prefs.contains(SAVED_ONLINE_SHARING);
-            boolean savedSharing = hasSavedSharing ? prefs.getBoolean(SAVED_ONLINE_SHARING, true) : originalSharing;
-            prefs.edit().putBoolean(HIDE_ONLINE_STATUS, checked).apply();
-            try {
-                if (checked) {
-                    if (!hasSavedSharing) {
-                        prefs.edit().putBoolean(SAVED_ONLINE_SHARING, originalSharing).apply();
+            View onlineItem = toggleRow(list, context, onlineLabel, "user_status",
+                prefs.getBoolean(HIDE_ONLINE_STATUS, false), darkMode, (button, checked) -> {
+                if (prefs.getBoolean(HIDE_ONLINE_STATUS, false) == checked) return;
+                boolean originalSharing = originalOnlineSharing();
+                boolean hasSavedSharing = prefs.contains(SAVED_ONLINE_SHARING);
+                boolean savedSharing = hasSavedSharing ? prefs.getBoolean(SAVED_ONLINE_SHARING, true) : originalSharing;
+                prefs.edit().putBoolean(HIDE_ONLINE_STATUS, checked).apply();
+                try {
+                    if (checked) {
+                        if (!hasSavedSharing) {
+                            prefs.edit().putBoolean(SAVED_ONLINE_SHARING, originalSharing).apply();
+                        }
+                        applyOriginalOnlineSharing(false);
+                    } else {
+                        applyOriginalOnlineSharing(savedSharing);
+                        prefs.edit().remove(SAVED_ONLINE_SHARING).apply();
                     }
-                    applyOriginalOnlineSharing(false);
-                } else {
-                    applyOriginalOnlineSharing(savedSharing);
-                    prefs.edit().remove(SAVED_ONLINE_SHARING).apply();
+                    publishOnlineState(103);
+                } catch (LinkageError | RuntimeException failure) {
+                    applyOriginalOnlineSharing(originalSharing);
+                    prefs.edit().putBoolean(HIDE_ONLINE_STATUS, !checked).apply();
+                    button.setChecked(!checked);
+                    Toast.makeText(context, vietnamese ? "Không thể cập nhật trạng thái kết nối" :
+                        "Unable to update connection status", Toast.LENGTH_SHORT).show();
                 }
-                publishOnlineState(103);
-            } catch (LinkageError | RuntimeException failure) {
-                applyOriginalOnlineSharing(originalSharing);
-                prefs.edit().putBoolean(HIDE_ONLINE_STATUS, !checked).apply();
-                onlineToggle.setChecked(!checked);
-                Toast.makeText(context, vietnamese ? "Không thể cập nhật trạng thái kết nối" :
-                    "Unable to update connection status", Toast.LENGTH_SHORT).show();
-            }
-        });
-        onlineItem.addView(onlineToggle);
-        onlineItem.setOnClickListener(view -> onlineToggle.setChecked(!onlineToggle.isChecked()));
-        list.addView(onlineItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
-        onlineItem.setVisibility(isOnlinePatchAvailable() ? View.VISIBLE : View.GONE);
+            });
+            onlineItem.setVisibility(isOnlinePatchAvailable() ? View.VISIBLE : View.GONE);
         }
         if ((features & FEATURE_REACTION) != 0) {
-        LinearLayout item = new LinearLayout(context);
-        item.setGravity(Gravity.CENTER_VERTICAL);
-        item.setBackgroundColor(surfaceColor(context, darkMode));
-        item.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        item.addView(label(context, reactionLabel, darkMode),
-                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch toggle = new Switch(context);
-        toggle.setContentDescription(reactionLabel);
-        toggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        toggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        toggle.setChecked(prefs.getBoolean(REACTION, true));
-        toggle.setOnCheckedChangeListener((button, checked) -> prefs.edit().putBoolean(REACTION, checked).apply());
-        item.addView(toggle);
-        item.setOnClickListener(view -> toggle.setChecked(!toggle.isChecked()));
-        list.addView(item, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+            toggleRow(list, context, reactionLabel, "face_smile", prefs.getBoolean(REACTION, true), darkMode,
+                (button, checked) -> prefs.edit().putBoolean(REACTION, checked).apply());
         }
         if ((features & FEATURE_TYPING) != 0) {
-        LinearLayout typingItem = new LinearLayout(context);
-        typingItem.setGravity(Gravity.CENTER_VERTICAL);
-        typingItem.setBackgroundColor(surfaceColor(context, darkMode));
-        typingItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        typingItem.addView(label(context, typingLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch typingToggle = new Switch(context);
-        typingToggle.setContentDescription(typingLabel);
-        typingToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        typingToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        typingToggle.setChecked(prefs.getBoolean(HIDE_TYPING, false));
-        typingToggle.setOnCheckedChangeListener((button, checked) -> prefs.edit().putBoolean(HIDE_TYPING, checked).apply());
-        typingItem.addView(typingToggle);
-        typingItem.setOnClickListener(view -> typingToggle.setChecked(!typingToggle.isChecked()));
-        list.addView(typingItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+            toggleRow(list, context, typingLabel, "more_horizontal", prefs.getBoolean(HIDE_TYPING, false), darkMode,
+                (button, checked) -> prefs.edit().putBoolean(HIDE_TYPING, checked).apply());
         }
         if ((features & FEATURE_READ_RECEIPTS) != 0) {
-        LinearLayout readItem = new LinearLayout(context);
-        readItem.setGravity(Gravity.CENTER_VERTICAL);
-        readItem.setBackgroundColor(surfaceColor(context, darkMode));
-        readItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        readItem.addView(label(context, readLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch readToggle = new Switch(context);
-        readToggle.setContentDescription(readLabel);
-        readToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        readToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        readToggle.setChecked(prefs.getBoolean(HIDE_READ_RECEIPTS, false));
-        readToggle.setOnCheckedChangeListener((button, checked) -> prefs.edit().putBoolean(HIDE_READ_RECEIPTS, checked).apply());
-        readItem.addView(readToggle);
-        readItem.setOnClickListener(view -> readToggle.setChecked(!readToggle.isChecked()));
-        list.addView(readItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+            toggleRow(list, context, readLabel, "read_message", prefs.getBoolean(HIDE_READ_RECEIPTS, false), darkMode,
+                (button, checked) -> prefs.edit().putBoolean(HIDE_READ_RECEIPTS, checked).apply());
         }
         if ((features & FEATURE_DELIVERY_RECEIPTS) != 0) {
-        LinearLayout deliveryItem = new LinearLayout(context);
-        deliveryItem.setGravity(Gravity.CENTER_VERTICAL);
-        deliveryItem.setBackgroundColor(surfaceColor(context, darkMode));
-        deliveryItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        deliveryItem.addView(label(context, deliveryLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch deliveryToggle = new Switch(context);
-        deliveryToggle.setContentDescription(deliveryLabel);
-        deliveryToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        deliveryToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        deliveryToggle.setChecked(prefs.getBoolean(HIDE_DELIVERY_RECEIPTS, false));
-        deliveryToggle.setOnCheckedChangeListener((button, checked) -> prefs.edit().putBoolean(HIDE_DELIVERY_RECEIPTS, checked).apply());
-        deliveryItem.addView(deliveryToggle);
-        deliveryItem.setOnClickListener(view -> deliveryToggle.setChecked(!deliveryToggle.isChecked()));
-        list.addView(deliveryItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+            toggleRow(list, context, deliveryLabel, "check_circle", prefs.getBoolean(HIDE_DELIVERY_RECEIPTS, false),
+                darkMode, (button, checked) -> prefs.edit().putBoolean(HIDE_DELIVERY_RECEIPTS, checked).apply());
         }
         if ((features & FEATURE_RECALLED_MESSAGES) != 0) {
-        LinearLayout recalledMessagesItem = new LinearLayout(context);
-        recalledMessagesItem.setGravity(Gravity.CENTER_VERTICAL);
-        recalledMessagesItem.setBackgroundColor(surfaceColor(context, darkMode));
-        recalledMessagesItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        recalledMessagesItem.addView(label(context, recalledMessagesLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch recalledMessagesToggle = new Switch(context);
-        recalledMessagesToggle.setContentDescription(recalledMessagesLabel);
-        recalledMessagesToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        recalledMessagesToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        recalledMessagesToggle.setChecked(prefs.getBoolean(KEEP_RECALLED_MESSAGES, false));
-        recalledMessagesToggle.setOnCheckedChangeListener((button, checked) ->
-            prefs.edit().putBoolean(KEEP_RECALLED_MESSAGES, checked).apply());
-        recalledMessagesItem.addView(recalledMessagesToggle);
-        recalledMessagesItem.setOnClickListener(view ->
-            recalledMessagesToggle.setChecked(!recalledMessagesToggle.isChecked()));
-        list.addView(recalledMessagesItem, new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+            toggleRow(list, context, recalledMessagesLabel, "recall",
+                prefs.getBoolean(KEEP_RECALLED_MESSAGES, false), darkMode,
+                (button, checked) -> prefs.edit().putBoolean(KEEP_RECALLED_MESSAGES, checked).apply());
         }
         if ((features & FEATURE_DISCOVERY) != 0) {
-        addGroup(list, context, vietnamese ? "Điều hướng" : "Navigation", darkMode);
-        LinearLayout discoveryItem = new LinearLayout(context);
-        discoveryItem.setGravity(Gravity.CENTER_VERTICAL);
-        discoveryItem.setBackgroundColor(surfaceColor(context, darkMode));
-        discoveryItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        discoveryItem.addView(label(context, discoveryLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch discoveryToggle = new Switch(context);
-        discoveryToggle.setContentDescription(discoveryLabel);
-        discoveryToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        discoveryToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        discoveryToggle.setChecked(prefs.getBoolean(HIDE_DISCOVERY, true));
-        discoveryToggle.setOnCheckedChangeListener((button, checked) -> {
-            if (prefs.getBoolean(HIDE_DISCOVERY, true) == checked) return;
-            prefs.edit().putBoolean(HIDE_DISCOVERY, checked).apply();
-            discoveryChanged[0] = true;
-        });
-        discoveryItem.addView(discoveryToggle);
-        discoveryItem.setOnClickListener(view -> discoveryToggle.setChecked(!discoveryToggle.isChecked()));
-        list.addView(discoveryItem, new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+            addGroup(list, context, vietnamese ? "Điều hướng" : "Navigation", darkMode);
+            toggleRow(list, context, discoveryLabel, "grid_view", prefs.getBoolean(HIDE_DISCOVERY, true), darkMode,
+                (button, checked) -> {
+                if (prefs.getBoolean(HIDE_DISCOVERY, true) == checked) return;
+                prefs.edit().putBoolean(HIDE_DISCOVERY, checked).apply();
+                discoveryChanged[0] = true;
+            });
         }
         if ((features & FEATURE_FEED_ADS) != 0) {
-        addGroup(list, context, vietnamese ? "Bảng tin" : "Feed", darkMode);
-        LinearLayout feedAdsItem = new LinearLayout(context);
-        feedAdsItem.setGravity(Gravity.CENTER_VERTICAL);
-        feedAdsItem.setBackgroundColor(surfaceColor(context, darkMode));
-        feedAdsItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        feedAdsItem.addView(label(context, feedAdsLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch feedAdsToggle = new Switch(context);
-        feedAdsToggle.setContentDescription(feedAdsLabel);
-        feedAdsToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        feedAdsToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        feedAdsToggle.setChecked(prefs.getBoolean(HIDE_FEED_ADS, false));
-        feedAdsToggle.setOnCheckedChangeListener((button, checked) ->
-            prefs.edit().putBoolean(HIDE_FEED_ADS, checked).apply());
-        feedAdsItem.addView(feedAdsToggle);
-        feedAdsItem.setOnClickListener(view -> feedAdsToggle.setChecked(!feedAdsToggle.isChecked()));
-        list.addView(feedAdsItem, new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+            addGroup(list, context, vietnamese ? "Bảng tin" : "Feed", darkMode);
+            toggleRow(list, context, feedAdsLabel, "new_feed", prefs.getBoolean(HIDE_FEED_ADS, false), darkMode,
+                (button, checked) -> prefs.edit().putBoolean(HIDE_FEED_ADS, checked).apply());
         }
         if ((features & (FEATURE_MEDIA_BOX | FEATURE_BUSINESS_BOX | FEATURE_OA_MESSAGES | FEATURE_MESSAGE_ADS)) != 0) {
-        addGroup(list, context, vietnamese ? "Hội thoại" : "Conversation", darkMode);
+            addGroup(list, context, vietnamese ? "Hội thoại" : "Conversation", darkMode);
         }
         if ((features & FEATURE_MEDIA_BOX) != 0) {
-        LinearLayout mediaBoxItem = new LinearLayout(context);
-        mediaBoxItem.setGravity(Gravity.CENTER_VERTICAL);
-        mediaBoxItem.setBackgroundColor(surfaceColor(context, darkMode));
-        mediaBoxItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        mediaBoxItem.addView(label(context, mediaBoxLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch mediaBoxToggle = new Switch(context);
-        mediaBoxToggle.setContentDescription(mediaBoxLabel);
-        mediaBoxToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        mediaBoxToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        mediaBoxToggle.setChecked(prefs.getBoolean(HIDE_MEDIA_BOX, false));
-        mediaBoxToggle.setOnCheckedChangeListener((button, checked) -> prefs.edit().putBoolean(HIDE_MEDIA_BOX, checked).apply());
-        mediaBoxItem.addView(mediaBoxToggle);
-        mediaBoxItem.setOnClickListener(view -> mediaBoxToggle.setChecked(!mediaBoxToggle.isChecked()));
-        list.addView(mediaBoxItem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+            toggleRow(list, context, mediaBoxLabel, "photo", prefs.getBoolean(HIDE_MEDIA_BOX, false), darkMode,
+                (button, checked) -> prefs.edit().putBoolean(HIDE_MEDIA_BOX, checked).apply());
         }
         if ((features & FEATURE_BUSINESS_BOX) != 0) {
-        LinearLayout businessBoxItem = new LinearLayout(context);
-        businessBoxItem.setGravity(Gravity.CENTER_VERTICAL);
-        businessBoxItem.setBackgroundColor(surfaceColor(context, darkMode));
-        businessBoxItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        businessBoxItem.addView(label(context, businessBoxLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch businessBoxToggle = new Switch(context);
-        businessBoxToggle.setContentDescription(businessBoxLabel);
-        businessBoxToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        businessBoxToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        businessBoxToggle.setChecked(prefs.getBoolean(HIDE_BUSINESS_BOX, false));
-        businessBoxToggle.setOnCheckedChangeListener((button, checked) ->
-            prefs.edit().putBoolean(HIDE_BUSINESS_BOX, checked).apply());
-        businessBoxItem.addView(businessBoxToggle);
-        businessBoxItem.setOnClickListener(view -> businessBoxToggle.setChecked(!businessBoxToggle.isChecked()));
-        list.addView(businessBoxItem, new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+            toggleRow(list, context, businessBoxLabel, "business_suite", prefs.getBoolean(HIDE_BUSINESS_BOX, false),
+                darkMode, (button, checked) -> prefs.edit().putBoolean(HIDE_BUSINESS_BOX, checked).apply());
         }
         if ((features & FEATURE_OA_MESSAGES) != 0) {
-        LinearLayout oaMessagesItem = new LinearLayout(context);
-        oaMessagesItem.setGravity(Gravity.CENTER_VERTICAL);
-        oaMessagesItem.setBackgroundColor(surfaceColor(context, darkMode));
-        oaMessagesItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        oaMessagesItem.addView(label(context, oaMessagesLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch oaMessagesToggle = new Switch(context);
-        oaMessagesToggle.setContentDescription(oaMessagesLabel);
-        oaMessagesToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        oaMessagesToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        oaMessagesToggle.setChecked(prefs.getBoolean(HIDE_OA_MESSAGES, true));
-        oaMessagesToggle.setOnCheckedChangeListener((button, checked) ->
-            setOAMessagesHidden(context, checked));
-        oaMessagesItem.addView(oaMessagesToggle);
-        oaMessagesItem.setOnClickListener(view -> oaMessagesToggle.setChecked(!oaMessagesToggle.isChecked()));
-        list.addView(oaMessagesItem, new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
-        LinearLayout oaMuteItem = new LinearLayout(context);
-        oaMuteItem.setGravity(Gravity.CENTER_VERTICAL);
-        oaMuteItem.setBackgroundColor(surfaceColor(context, darkMode));
-        oaMuteItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        oaMuteItem.addView(label(context, oaMuteLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch oaMuteToggle = new Switch(context);
-        oaMuteToggle.setContentDescription(oaMuteLabel);
-        oaMuteToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        oaMuteToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        oaMuteToggle.setChecked(prefs.getBoolean(MUTE_OA_MESSAGES, true));
-        oaMuteToggle.setOnCheckedChangeListener((button, checked) ->
-            setOAMessagesMuted(context, checked));
-        oaMuteItem.addView(oaMuteToggle);
-        oaMuteItem.setOnClickListener(view -> oaMuteToggle.setChecked(!oaMuteToggle.isChecked()));
-        list.addView(oaMuteItem, new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+            toggleRow(list, context, oaMessagesLabel, "hide", prefs.getBoolean(HIDE_OA_MESSAGES, true), darkMode,
+                (button, checked) -> setOAMessagesHidden(context, checked));
+            toggleRow(list, context, oaMuteLabel, "notif_off", prefs.getBoolean(MUTE_OA_MESSAGES, true), darkMode,
+                (button, checked) -> setOAMessagesMuted(context, checked));
         }
         if ((features & FEATURE_MESSAGE_ADS) != 0) {
-        String messageAdsLabel = vietnamese ? "Ẩn quảng cáo trong Messages" : "Hide ads in Messages";
-        LinearLayout messageAdsItem = new LinearLayout(context);
-        messageAdsItem.setGravity(Gravity.CENTER_VERTICAL);
-        messageAdsItem.setBackgroundColor(surfaceColor(context, darkMode));
-        messageAdsItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
-        messageAdsItem.addView(label(context, messageAdsLabel, darkMode),
-            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
-        Switch messageAdsToggle = new Switch(context);
-        messageAdsToggle.setContentDescription(messageAdsLabel);
-        messageAdsToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        messageAdsToggle.setTrackTintList(new ColorStateList(
-            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
-            new int[] { BLUE, 0xFFBDBDBD }));
-        messageAdsToggle.setChecked(prefs.getBoolean(HIDE_MESSAGE_ADS, false));
-        messageAdsToggle.setOnCheckedChangeListener((button, checked) ->
-            prefs.edit().putBoolean(HIDE_MESSAGE_ADS, checked).apply());
-        messageAdsItem.addView(messageAdsToggle);
-        messageAdsItem.setOnClickListener(view -> messageAdsToggle.setChecked(!messageAdsToggle.isChecked()));
-        list.addView(messageAdsItem, new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+            toggleRow(list, context, messageAdsLabel, "chat_block", prefs.getBoolean(HIDE_MESSAGE_ADS, false),
+                darkMode, (button, checked) -> prefs.edit().putBoolean(HIDE_MESSAGE_ADS, checked).apply());
         }
         if ((features & FEATURE_CUSTOM_FONT) != 0) {
-        addGroup(list, context, vietnamese ? "Giao diện" : "Appearance", darkMode);
-        String fontTitle = vietnamese ? "Phông chữ tùy chọn" : "Custom font";
-        View fontItem = row(context, fontTitle, false, true, darkMode);
-        TextView fontLabel = findTextView(fontItem);
-        Runnable updateFontLabel = () -> fontLabel.setText(fontTitle + (CustomFont.isSelected(context)
-            ? (vietnamese ? " (đã chọn)" : " (selected)") : ""));
-        updateFontLabel.run();
-        fontItem.setOnClickListener(view -> {
-            if (!CustomFont.pick(context, updateFontLabel)) {
-            Toast.makeText(context, vietnamese ? "Không thể mở trình chọn phông chữ" : "Cannot open font picker",
-                Toast.LENGTH_SHORT).show();
-            }
-        });
-        list.addView(fontItem);
-        View resetFont = row(context, vietnamese ? "Dùng phông chữ mặc định" : "Restore default font",
-            false, false, darkMode);
-        resetFont.setOnClickListener(view -> {
-            CustomFont.reset(context);
+            addGroup(list, context, vietnamese ? "Giao diện" : "Appearance", darkMode);
+            String fontTitle = vietnamese ? "Phông chữ tùy chọn" : "Custom font";
+            View fontItem = row(context, fontTitle, zdsIcon(context, "edit_text", darkMode), true, darkMode, null);
+            TextView fontLabel = rowTitle(fontItem);
+            Runnable updateFontLabel = () -> fontLabel.setText(fontTitle + (CustomFont.isSelected(context)
+                ? (vietnamese ? " (đã chọn)" : " (selected)") : ""));
             updateFontLabel.run();
-            Toast.makeText(context, vietnamese ? "Mở lại Zalo để cập nhật phông chữ"
-                : "Restart Zalo to refresh text", Toast.LENGTH_LONG).show();
-        });
-        list.addView(resetFont);
+            fontItem.setOnClickListener(view -> {
+                if (!CustomFont.pick(context, updateFontLabel)) {
+                    Toast.makeText(context, vietnamese ? "Không thể mở trình chọn phông chữ" : "Cannot open font picker",
+                        Toast.LENGTH_SHORT).show();
+                }
+            });
+            list.addView(fontItem);
+            View resetFont = row(context, vietnamese ? "Dùng phông chữ mặc định" : "Restore default font",
+                zdsIcon(context, "auto_counter_clockwise", darkMode), false, darkMode, null);
+            resetFont.setOnClickListener(view -> {
+                CustomFont.reset(context);
+                updateFontLabel.run();
+                Toast.makeText(context, vietnamese ? "Mở lại Zalo để cập nhật phông chữ"
+                    : "Restart Zalo to refresh text", Toast.LENGTH_LONG).show();
+            });
+            list.addView(resetFont);
         }
         if ((features & FEATURE_CUSTOM_SOUNDS) != 0) {
             addGroup(list, context, vietnamese ? "Âm thanh" : "Sounds", darkMode);
-            addSoundRows(list, context, CustomSounds.NOTIFICATION,
+            addSoundRows(list, context, CustomSounds.NOTIFICATION, "notif",
                 vietnamese ? "Âm báo tin nhắn" : "Notification sound", darkMode, vietnamese);
-            addSoundRows(list, context, CustomSounds.RINGTONE,
+            addSoundRows(list, context, CustomSounds.RINGTONE, "call",
                 vietnamese ? "Nhạc chuông cuộc gọi" : "Incoming-call ringtone", darkMode, vietnamese);
         }
+        trimGroupDividers(list);
         page.show();
         page.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
     }
 
-    private static void addSoundRows(LinearLayout list, Context context, String kind, String title,
+    private static void addSoundRows(LinearLayout list, Context context, String kind, String icon, String title,
             boolean darkMode, boolean vietnamese) {
-        View item = row(context, title, false, true, darkMode);
-        TextView text = findTextView(item);
+        View item = row(context, title, zdsIcon(context, icon, darkMode), true, darkMode, null);
+        TextView text = rowTitle(item);
         Runnable update = () -> text.setText(title + (CustomSounds.isSelected(context, kind)
             ? (vietnamese ? " (đã chọn)" : " (selected)") : ""));
         update.run();
@@ -1463,12 +1267,79 @@ public final class NezumiSettings {
         });
         list.addView(item);
         View reset = row(context, vietnamese ? "Khôi phục: " + title : "Restore: " + title,
-            false, false, darkMode);
+            zdsIcon(context, "auto_counter_clockwise", darkMode), false, darkMode, null);
         reset.setOnClickListener(view -> {
             CustomSounds.reset(context, kind);
             update.run();
         });
         list.addView(reset);
+    }
+
+    /** Settings row with a leading Zalo icon, a label and a trailing Zalo-style switch. */
+    private static View toggleRow(LinearLayout list, Context context, String title, String icon, boolean checked,
+            boolean darkMode, CompoundButton.OnCheckedChangeListener listener) {
+        View wrapper = row(context, title, zdsIcon(context, icon, darkMode), false, darkMode, null);
+        LinearLayout content = (LinearLayout) ((ViewGroup) wrapper).getChildAt(0);
+        CompoundButton toggle = zaloSwitch(context, darkMode);
+        toggle.setContentDescription(title);
+        toggle.setChecked(checked);
+        toggle.setOnCheckedChangeListener(listener);
+        LinearLayout.LayoutParams toggleParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        toggleParams.leftMargin = dp(context, 12);
+        content.addView(toggle, toggleParams);
+        wrapper.setOnClickListener(view -> toggle.setChecked(!toggle.isChecked()));
+        list.addView(wrapper);
+        return wrapper;
+    }
+
+    /** Prefer Zalo's own design-system switch; fall back to a look-alike when it is unavailable. */
+    private static CompoundButton zaloSwitch(Context context, boolean darkMode) {
+        try {
+            CompoundButton native_ = (CompoundButton) Class.forName("com.zing.zalo.zdesign.component.Switch")
+                .getConstructor(Context.class).newInstance(context);
+            int unspecified = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+            native_.measure(unspecified, unspecified);
+            if (native_.getMeasuredWidth() > 0 && native_.getMeasuredHeight() > 0) return native_;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) { }
+        return new ZaloToggle(context, darkMode);
+    }
+
+    private static Drawable zdsIcon(Context context, String name, boolean darkMode) {
+        int id = context.getResources().getIdentifier("zds_ic_" + name + "_line_24", "drawable",
+            context.getPackageName());
+        if (id == 0) return null;
+        try {
+            Drawable icon = context.getDrawable(id);
+            if (icon == null) return null;
+            icon = icon.mutate();
+            icon.setTint(darkMode ? BLUE_DARK : BLUE);
+            return icon;
+        } catch (RuntimeException ignored) {
+            return null;
+        }
+    }
+
+    private static TextView rowTitle(View row) {
+        Object title = row.getTag(ROW_TITLE_KEY);
+        return title instanceof TextView ? (TextView) title : findTextView(row);
+    }
+
+    /** Hide the separator under the last visible row of each group, like Zalo's own lists. */
+    private static void trimGroupDividers(LinearLayout list) {
+        View lastRow = null;
+        for (int index = 0; index <= list.getChildCount(); index++) {
+            View child = index < list.getChildCount() ? list.getChildAt(index) : null;
+            if (child != null && child.getVisibility() == View.GONE) continue;
+            Object divider = child == null ? null : child.getTag(ROW_DIVIDER_KEY);
+            if (child != null && divider instanceof View) {
+                if (lastRow != null) ((View) lastRow.getTag(ROW_DIVIDER_KEY)).setVisibility(View.VISIBLE);
+                lastRow = child;
+                continue;
+            }
+            if (lastRow != null) ((View) lastRow.getTag(ROW_DIVIDER_KEY)).setVisibility(View.GONE);
+            lastRow = null;
+        }
     }
 
     private static Dialog page(Context context, String title, boolean darkMode) {
@@ -1522,6 +1393,87 @@ public final class NezumiSettings {
             (window.getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE) & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         return page;
+    }
+
+    /** Fallback drawn to Zalo's Switch.Medium spec: 40x24dp pill track, 20dp thumb, 2dp inset. */
+    private static final class ZaloToggle extends CompoundButton {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final RectF track = new RectF();
+        private final int onColor;
+        private final int offColor;
+        private final int thumbColor;
+        private float progress;
+        private ValueAnimator animator;
+
+        ZaloToggle(Context context, boolean darkMode) {
+            super(context);
+            onColor = attrColor(context, "switch_on_track", BLUE);
+            offColor = darkMode ? 0xFF4A4D52 : attrColor(context, "switch_off_track", 0xFFC4C9CF);
+            thumbColor = attrColor(context, "switch_handle", 0xFFFFFFFF);
+            setButtonDrawable(null);
+            setBackground(null);
+            setClickable(true);
+            progress = isChecked() ? 1f : 0f;
+        }
+
+        @Override public CharSequence getAccessibilityClassName() {
+            return android.widget.Switch.class.getName();
+        }
+
+        @Override protected void onMeasure(int widthSpec, int heightSpec) {
+            setMeasuredDimension(dp(getContext(), 40), dp(getContext(), 24));
+        }
+
+        @Override public void setChecked(boolean checked) {
+            boolean changed = checked != isChecked();
+            super.setChecked(checked);
+            if (!changed) return;
+            float target = checked ? 1f : 0f;
+            if (animator != null) animator.cancel();
+            if (!isAttachedToWindow()) {
+                progress = target;
+                invalidate();
+                return;
+            }
+            animator = ValueAnimator.ofFloat(progress, target);
+            animator.setDuration(180);
+            animator.addUpdateListener(animation -> {
+                progress = (float) animation.getAnimatedValue();
+                invalidate();
+            });
+            animator.start();
+        }
+
+        @Override protected void onDraw(Canvas canvas) {
+            float width = getWidth();
+            float height = getHeight();
+            float radius = height / 2f;
+            paint.setColor(blend(offColor, onColor, progress));
+            if (!isEnabled()) paint.setAlpha(110);
+            track.set(0, 0, width, height);
+            canvas.drawRoundRect(track, radius, radius, paint);
+            float inset = dp(getContext(), 2);
+            float thumbRadius = radius - inset;
+            float start = inset + thumbRadius;
+            float end = width - inset - thumbRadius;
+            paint.setColor(thumbColor);
+            paint.setShadowLayer(inset, 0, inset / 2f, 0x33000000);
+            canvas.drawCircle(start + (end - start) * progress, radius, thumbRadius, paint);
+            paint.clearShadowLayer();
+        }
+
+        private static int blend(int from, int to, float ratio) {
+            int a = (int) (((from >>> 24) & 0xFF) + (((to >>> 24) & 0xFF) - ((from >>> 24) & 0xFF)) * ratio);
+            int r = (int) (((from >> 16) & 0xFF) + (((to >> 16) & 0xFF) - ((from >> 16) & 0xFF)) * ratio);
+            int g = (int) (((from >> 8) & 0xFF) + (((to >> 8) & 0xFF) - ((from >> 8) & 0xFF)) * ratio);
+            int b = (int) ((from & 0xFF) + ((to & 0xFF) - (from & 0xFF)) * ratio);
+            return (a << 24) | (r << 16) | (g << 8) | b;
+        }
+    }
+
+    private static int attrColor(Context context, String name, int fallback) {
+        int attribute = context.getResources().getIdentifier(name, "attr", context.getPackageName());
+        return attribute == 0 ? fallback : themeColor(context, attribute, fallback);
     }
 
     private static final class LineIcon extends Drawable {
