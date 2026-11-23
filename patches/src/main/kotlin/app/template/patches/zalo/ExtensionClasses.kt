@@ -18,6 +18,7 @@ internal const val CUSTOM_FONT = "$EXTENSION/appearance/CustomFont;"
 internal const val AMOLED_THEME = "$EXTENSION/appearance/AmoledTheme;"
 internal const val CUSTOM_SOUNDS = "$EXTENSION/sound/CustomSounds;"
 internal const val MICROG_SUPPORT = "$EXTENSION/backup/ZaloMicroGSupport;"
+internal const val DRIVE_TOKEN_RECOVERY = "$EXTENSION/backup/DriveTokenRecovery;"
 
 /** Class name (not descriptor) used where Android needs a component name, e.g. the manifest. */
 internal const val SOUND_PROVIDER_CLASS = "app.template.extension.zalo.sound.SoundProvider"
