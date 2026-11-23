@@ -22,7 +22,7 @@ private data class MessageAdsMatch(
 val hideMessageAdsPatch = bytecodePatch(
     name = "Hide ads in Messages",
     description = "Hide Z Instant Ads rows in Zalo's Messages page when enabled in Nezumi Settings.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

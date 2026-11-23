@@ -28,7 +28,7 @@ private data class FeedListMatch(
 val hideFeedAdsPatch = bytecodePatch(
     name = "Hide feed ads",
     description = "Remove sponsored and advertising items from Zalo's user feed when enabled in Nezumi Settings.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

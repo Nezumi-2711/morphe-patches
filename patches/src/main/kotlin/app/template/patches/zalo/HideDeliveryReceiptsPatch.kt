@@ -30,7 +30,7 @@ private object DeliveryAckFingerprint : Fingerprint(
 val hideDeliveryReceiptsPatch = bytecodePatch(
     name = "Hide delivery receipts",
     description = "Suppress outgoing message delivery ACKs when enabled in Nezumi Settings.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

@@ -45,7 +45,7 @@ val hideReadReceiptsPatch = bytecodePatch(
     name = "Hide read receipts",
     description = "Keep outgoing read receipts private while retaining delivery ACKs when enabled in Nezumi Settings. " +
         "Adds a Mark as read button to the chat toolbar for sending a read receipt on demand.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

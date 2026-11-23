@@ -48,7 +48,7 @@ internal object ZaloSettingsFingerprint : Fingerprint(
 val chatReactionPickerPatch = bytecodePatch(
     name = "Chat reaction picker",
     description = "Allow the enabled chat reaction UI without a matching subscription package.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

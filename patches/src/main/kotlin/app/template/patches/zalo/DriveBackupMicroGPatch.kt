@@ -184,7 +184,7 @@ private fun Method.invokes(predicate: (MethodReference) -> Boolean) =
 val driveBackupMicroGPatch = bytecodePatch(
     name = "Drive backup via microG",
     description = "Enable Google Drive photo backup and use microG for Drive accounts and authentication.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(driveCompatibility)
     dependsOn(nativeSignaturePatch)

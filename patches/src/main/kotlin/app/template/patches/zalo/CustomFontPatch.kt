@@ -57,7 +57,7 @@ private object ZaloFontStartupFingerprint : Fingerprint(
 val customFontPatch = bytecodePatch(
     name = "Custom font",
     description = "Choose a font in Nezumi's Settings for Zalo's text, chat messages, info card, options, and contacts.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

@@ -69,7 +69,7 @@ private object OneShotNotificationFingerprint : Fingerprint(
 val customSoundsPatch = bytecodePatch(
     name = "Custom sounds",
     description = "Choose custom notification and incoming-call sounds in Nezumi's Settings.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

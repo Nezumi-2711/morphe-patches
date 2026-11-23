@@ -30,7 +30,7 @@ private object MediaBoxListFingerprint : Fingerprint(
 val hideMediaBoxPatch = bytecodePatch(
     name = "Hide Media Box in Messages",
     description = "Hide the Media Box row in Messages when enabled in Nezumi Settings.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

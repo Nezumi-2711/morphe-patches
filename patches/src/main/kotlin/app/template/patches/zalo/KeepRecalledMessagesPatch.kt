@@ -45,7 +45,7 @@ private object IncomingDeleteControlFingerprint : Fingerprint(
 val keepRecalledMessagesPatch = bytecodePatch(
     name = "Keep recalled messages",
     description = "Keep received messages and locally available photos after another user recalls them, when enabled in Nezumi Settings.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

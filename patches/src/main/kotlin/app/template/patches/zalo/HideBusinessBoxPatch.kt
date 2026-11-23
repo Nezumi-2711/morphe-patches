@@ -32,7 +32,7 @@ private object BusinessBoxListFingerprint : Fingerprint(
 val hideBusinessBoxPatch = bytecodePatch(
     name = "Hide Business Box in Messages",
     description = "Hide the Business Box row in Messages when enabled in Nezumi Settings.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

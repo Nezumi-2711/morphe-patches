@@ -80,7 +80,7 @@ private object CurrentChatPostureFingerprint : Fingerprint(
 val chatHeadsPatch = bytecodePatch(
     name = "Chat heads instead of Android bubbles",
     description = "Use Zalo's overlay chat heads rather than native Android bubbles on Android 11 and newer.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

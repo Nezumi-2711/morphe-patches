@@ -74,7 +74,7 @@ private object ChatOnlineListRefresh : Fingerprint(
 val viewOnlineStatusPrivatelyPatch = bytecodePatch(
     name = "View online status privately",
     description = "Hide your activity and show confirmed current-online status in the individual chat header when available.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

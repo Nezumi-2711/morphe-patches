@@ -29,7 +29,7 @@ private object MessagesListFingerprint : Fingerprint(
 val hideOfficialAccountsPatch = bytecodePatch(
     name = "Hide OA accounts in Messages",
     description = "Hide OA accounts in Messages and/or mute their notifications. Both options are configurable in Nezumi Settings.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",

@@ -17,7 +17,7 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 val hideDiscoveryTabPatch = bytecodePatch(
     name = "Hide Discovery tab",
     description = "Remove the Discovery tab from Zalo's main navigation.",
-    default = false,
+    default = true,
 ) {
     compatibleWith(Compatibility(
         name = "Zalo",
