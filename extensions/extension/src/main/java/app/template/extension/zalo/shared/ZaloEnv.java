@@ -1,13 +1,13 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.shared;
 
 import android.app.Activity;
 import android.content.Context;
 
 /** Reflection helpers for Zalo's runtime: app context, signed-in account, language, coroutines. */
-final class ZaloEnv {
+public final class ZaloEnv {
     private ZaloEnv() { }
 
-    static void collectNativeFlow(Object flow) throws ReflectiveOperationException {
+    public static void collectNativeFlow(Object flow) throws ReflectiveOperationException {
         Object ioContext = Class.forName("kotlinx.coroutines.scheduling.DefaultIoScheduler")
             .getField("c").get(null);
         Class<?> scopeClass = Class.forName("kotlinx.coroutines.CoroutineScope");
@@ -35,7 +35,7 @@ final class ZaloEnv {
         throw new NoSuchMethodException("launchIn");
     }
 
-    static String currentAccount() {
+    public static String currentAccount() {
         try {
             Object account = Class.forName("com.zing.zalocore.CoreUtility").getField("i").get(null);
             return account instanceof String ? (String) account : null;
@@ -44,7 +44,7 @@ final class ZaloEnv {
         }
     }
 
-    static Context appContext() {
+    public static Context appContext() {
         try {
             return (Context) Class.forName("com.zing.zalo.MainApplication")
                 .getMethod("getAppContext").invoke(null);
@@ -53,7 +53,7 @@ final class ZaloEnv {
         }
     }
 
-    static Activity activityOf(Context context) {
+    public static Activity activityOf(Context context) {
         Context current = context;
         while (current instanceof android.content.ContextWrapper) {
             if (current instanceof Activity) return (Activity) current;
@@ -64,7 +64,7 @@ final class ZaloEnv {
         return current instanceof Activity ? (Activity) current : null;
     }
 
-    static boolean isVietnamese(Context context) {
+    public static boolean isVietnamese(Context context) {
         try {
             Object language = Class.forName("z0r").getField("b").get(null);
             if ("vi".equals(language)) return true;

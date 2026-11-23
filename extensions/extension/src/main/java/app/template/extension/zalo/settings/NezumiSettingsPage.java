@@ -1,7 +1,7 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.settings;
 
 import android.app.Dialog;
-import android.app.Activity;
+import android.app.Notification;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
@@ -11,8 +11,16 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import app.template.extension.zalo.appearance.CustomFont;
+import app.template.extension.zalo.chat.OnlineStatus;
+import app.template.extension.zalo.messages.OfficialAccounts;
+import app.template.extension.zalo.navigation.DiscoveryTab;
+import app.template.extension.zalo.shared.ZaloEnv;
+import app.template.extension.zalo.sound.CustomSounds;
+import app.template.extension.zalo.ui.ZaloUi;
+
 /** The Nezumi's Settings entry row and the full-screen settings page it opens. */
-final class NezumiSettingsPage {
+public final class NezumiSettingsPage {
     private NezumiSettingsPage() { }
 
     static final int FEATURE_REACTION = 1;
@@ -42,23 +50,6 @@ final class NezumiSettingsPage {
     static final int FEATURE_DISCOVERY = 1 << 7;
 
     static final int FEATURE_CUSTOM_SOUNDS = 1 << 9;
-
-    private static void recreateForDiscovery(Context context) {
-        refreshDiscoveryTabs();
-        Activity activity = ZaloEnv.activityOf(context);
-        if (activity != null && !activity.isFinishing() && !activity.isChangingConfigurations()) {
-            activity.recreate();
-        }
-    }
-
-    private static void refreshDiscoveryTabs() {
-        try {
-            Object configuration = Class.forName("y5f").getMethod("h").invoke(null);
-            configuration.getClass().getMethod("o").invoke(configuration);
-            configuration.getClass().getMethod("q").invoke(configuration);
-        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
-        }
-    }
 
     static void attach(View root, View anchor, int feature) {
         if (root == null || anchor == null || !(anchor.getParent() instanceof ViewGroup)) return;
@@ -121,7 +112,7 @@ final class NezumiSettingsPage {
         Dialog page = ZaloUi.page(context, "Nezumi's Settings", darkMode);
         boolean[] discoveryChanged = { false };
         page.setOnDismissListener(dialog -> {
-            if (discoveryChanged[0]) recreateForDiscovery(context);
+            if (discoveryChanged[0]) DiscoveryTab.recreateAfterChange(context);
         });
         LinearLayout list = page.findViewById(android.R.id.content).findViewWithTag("nezumi-list");
         if (hasChatFeatures) ZaloUi.addGroup(list, context, vietnamese ? "Trò chuyện" : "Chat", darkMode);
@@ -129,7 +120,7 @@ final class NezumiSettingsPage {
             View onlineItem = ZaloUi.toggleRow(list, context, onlineLabel, "user_status",
                 prefs.getBoolean(NezumiPrefs.HIDE_ONLINE_STATUS, false), darkMode, (button, checked) -> {
                 if (prefs.getBoolean(NezumiPrefs.HIDE_ONLINE_STATUS, false) == checked) return;
-                boolean originalSharing = NezumiSettings.originalOnlineSharing();
+                boolean originalSharing = OnlineStatus.originalOnlineSharing();
                 boolean hasSavedSharing = prefs.contains(NezumiPrefs.SAVED_ONLINE_SHARING);
                 boolean savedSharing = hasSavedSharing ? prefs.getBoolean(NezumiPrefs.SAVED_ONLINE_SHARING, true) : originalSharing;
                 prefs.edit().putBoolean(NezumiPrefs.HIDE_ONLINE_STATUS, checked).apply();
@@ -138,21 +129,21 @@ final class NezumiSettingsPage {
                         if (!hasSavedSharing) {
                             prefs.edit().putBoolean(NezumiPrefs.SAVED_ONLINE_SHARING, originalSharing).apply();
                         }
-                        NezumiSettings.applyOriginalOnlineSharing(false);
+                        OnlineStatus.applyOriginalOnlineSharing(false);
                     } else {
-                        NezumiSettings.applyOriginalOnlineSharing(savedSharing);
+                        OnlineStatus.applyOriginalOnlineSharing(savedSharing);
                         prefs.edit().remove(NezumiPrefs.SAVED_ONLINE_SHARING).apply();
                     }
-                    NezumiSettings.publishOnlineState(103);
+                    OnlineStatus.publishOnlineState(103);
                 } catch (LinkageError | RuntimeException failure) {
-                    NezumiSettings.applyOriginalOnlineSharing(originalSharing);
+                    OnlineStatus.applyOriginalOnlineSharing(originalSharing);
                     prefs.edit().putBoolean(NezumiPrefs.HIDE_ONLINE_STATUS, !checked).apply();
                     button.setChecked(!checked);
                     Toast.makeText(context, vietnamese ? "Không thể cập nhật trạng thái kết nối" :
                         "Unable to update connection status", Toast.LENGTH_SHORT).show();
                 }
             });
-            onlineItem.setVisibility(NezumiSettings.isOnlinePatchAvailable() ? View.VISIBLE : View.GONE);
+            onlineItem.setVisibility(OnlineStatus.isOnlinePatchAvailable() ? View.VISIBLE : View.GONE);
         }
         if ((features & FEATURE_REACTION) != 0) {
             ZaloUi.toggleRow(list, context, reactionLabel, "face_smile", prefs.getBoolean(NezumiPrefs.REACTION, true), darkMode,

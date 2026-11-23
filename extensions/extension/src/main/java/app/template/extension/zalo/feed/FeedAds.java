@@ -1,14 +1,18 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.feed;
 
+import android.content.Context;
 import java.util.ArrayList;
 import java.util.List;
 
+import app.template.extension.zalo.settings.NezumiPrefs;
+import app.template.extension.zalo.shared.ZaloEnv;
+
 /** Removes sponsored items from the Timeline feed. */
-final class FeedAds {
+public final class FeedAds {
     private FeedAds() { }
 
     public static List filterFeedAds(List items) {
-        if (!NezumiSettings.isFeedAdsHidden(ZaloEnv.appContext()) || items == null || items.isEmpty()) return items;
+        if (!isFeedAdsHidden(ZaloEnv.appContext()) || items == null || items.isEmpty()) return items;
         ArrayList filtered = new ArrayList(items.size());
         for (Object item : items) {
             if (!isFeedAdItem(item)) filtered.add(item);
@@ -22,5 +26,9 @@ final class FeedAds {
         } catch (ReflectiveOperationException | RuntimeException ignored) {
             return false;
         }
+    }
+
+    static boolean isFeedAdsHidden(Context context) {
+        return NezumiPrefs.bool(context, NezumiPrefs.HIDE_FEED_ADS, false);
     }
 }

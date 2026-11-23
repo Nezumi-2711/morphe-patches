@@ -1,4 +1,4 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.ui;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -6,7 +6,7 @@ import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 
 /** Minimal stroked icons used when Zalo's own drawables are unavailable. */
-final class LineIcon extends Drawable {
+public final class LineIcon extends Drawable {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final int kind;
 

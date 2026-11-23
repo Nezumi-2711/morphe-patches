@@ -52,7 +52,7 @@ val hideOfficialAccountsPatch = bytecodePatch(
             val register = (instructions[index] as OneRegisterInstruction).registerA
             check(register < 16)
             method.replaceInstruction(index,
-                "invoke-static {v$register}, Lapp/template/extension/extension/NezumiSettings;->filterOfficialAccounts(Ljava/util/List;)Ljava/util/List;")
+                "invoke-static {v$register}, $OFFICIAL_ACCOUNTS->filterOfficialAccounts(Ljava/util/List;)Ljava/util/List;")
             method.addInstructions(index + 1, "move-result-object v$register\nreturn-object v$register")
         }
         attachNezumiSettings("attachOAMessages")

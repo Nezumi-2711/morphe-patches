@@ -1,18 +1,21 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.chat;
 
 import android.content.Context;
 import android.util.Base64;
 import android.view.View;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+
+import app.template.extension.zalo.settings.NezumiPrefs;
+import app.template.extension.zalo.shared.ZaloEnv;
 
 /** Keeps incoming recalled messages visible and labels them in the chat footer. */
-final class RecalledMessages {
+public final class RecalledMessages {
     private RecalledMessages() { }
 
     private static final Object RECALL_LOCK = new Object();
@@ -24,7 +27,7 @@ final class RecalledMessages {
     private static Set<String> recalledMessages = new HashSet<>();
 
     public static boolean shouldKeepIncomingRecall(String senderId, int eventType) {
-        boolean enabled = NezumiSettings.isRecalledMessagesKept(ZaloEnv.appContext());
+        boolean enabled = isRecalledMessagesKept(ZaloEnv.appContext());
         String account = ZaloEnv.currentAccount();
         boolean incoming = account != null && !account.isEmpty()
             && senderId != null && !senderId.isEmpty() && !account.equals(senderId);
@@ -167,5 +170,9 @@ final class RecalledMessages {
 
     public static String recalledLabel(Context context) {
         return ZaloEnv.isVietnamese(context) ? "Đã thu hồi" : "Recalled";
+    }
+
+    public static boolean isRecalledMessagesKept(Context context) {
+        return NezumiPrefs.bool(context, NezumiPrefs.KEEP_RECALLED_MESSAGES, false);
     }
 }

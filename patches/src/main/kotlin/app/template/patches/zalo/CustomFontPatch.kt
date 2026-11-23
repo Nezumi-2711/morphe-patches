@@ -79,7 +79,7 @@ val customFontPatch = bytecodePatch(
 }
 
 private fun BytecodePatchContext.applyCurrentFontHooks() {
-    val extension = "Lapp/template/extension/extension/CustomFont;"
+    val extension = CUSTOM_FONT
     val factory = ZaloTypefaceFactoryFingerprint.method
     val original = factory.implementation!!.instructions.first()
     factory.addInstructionsWithLabels(0, """

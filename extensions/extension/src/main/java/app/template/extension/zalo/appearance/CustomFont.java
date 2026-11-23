@@ -1,4 +1,4 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.appearance;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -9,20 +9,21 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Typeface;
-import android.text.TextPaint;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
+import android.text.TextPaint;
 import android.util.Log;
 import android.widget.Toast;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.Locale;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import app.template.extension.zalo.settings.NezumiPrefs;
 
 public final class CustomFont extends Fragment {
     private static final String FONT = "custom_font";

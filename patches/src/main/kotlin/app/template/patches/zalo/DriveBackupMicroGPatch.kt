@@ -63,7 +63,6 @@ private object GoogleAccountIdProvider : Fingerprint(
 )
 
 private const val TYPES_LATEST = 8
-private const val MICROG_EXTENSION = "Lapp/template/extension/extension/ZaloMicroGSupport;"
 private const val SYNC_VIEW = "Lcom/zing/zalo/ui/backuprestore/drive/SyncGoogleAccountBaseView;"
 private const val MANAGE_VIEW = "Lcom/zing/zalo/ui/backuprestore/drive/ManageGoogleAccountView;"
 private const val CHOOSE_ACCOUNT_SHEET = "Lcom/zing/zalo/ui/backuprestore/encryption/setup/drive/ChooseDriveAccountBS;"
@@ -96,7 +95,7 @@ private fun replaceAccountPicker(method: MutableMethod, contextOwner: String) = 
     invoke-virtual {p0}, $contextOwner->getContext()Landroid/content/Context;
     move-result-object v2
     check-cast v2, Landroid/app/Activity;
-    invoke-static {v2}, $MICROG_EXTENSION->checkGmsCore(Landroid/app/Activity;)Z
+    invoke-static {v2}, $MICROG_SUPPORT->checkGmsCore(Landroid/app/Activity;)Z
     move-result v1
     if-eqz v1, :microg_missing
     const/16 v1, 0x3eb
@@ -254,14 +253,14 @@ val driveBackupMicroGPatch = bytecodePatch(
                         call?.definingClass == SYNC_VIEW && call.parameterTypes == listOf("Ljava/lang/String;") && call.returnType == "V") {
                         val invoke = instruction as? FiveRegisterInstruction ?: error("Unexpected account refresh invoke")
                         check(invoke.registerCount == 2)
-                        method.replaceInstruction(index, "invoke-static {v${invoke.registerC}, v${invoke.registerD}}, $MICROG_EXTENSION->scheduleAccountRefresh(Ljava/lang/Object;Ljava/lang/String;)V")
+                        method.replaceInstruction(index, "invoke-static {v${invoke.registerC}, v${invoke.registerD}}, $MICROG_SUPPORT->scheduleAccountRefresh(Ljava/lang/Object;Ljava/lang/String;)V")
                         counts["refresh"] = counts.getValue("refresh") + 1
                     }
                 }
                 if (classDef.type == "Lcom/zing/zalo/ui/ZaloLauncherActivity;" && original.name == "onCreate" &&
                     original.parameterTypes == listOf("Landroid/os/Bundle;")) {
                     check(method.implementation!!.registerCount > 2)
-                    method.addInstructions(0, "move-object/from16 v0, p0\ninvoke-static {v0}, $MICROG_EXTENSION->checkGmsCore(Landroid/app/Activity;)Z\nmove-result v0")
+                    method.addInstructions(0, "move-object/from16 v0, p0\ninvoke-static {v0}, $MICROG_SUPPORT->checkGmsCore(Landroid/app/Activity;)Z\nmove-result v0")
                     counts["launch"] = counts.getValue("launch") + 1
                 }
             }

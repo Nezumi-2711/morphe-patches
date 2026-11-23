@@ -99,7 +99,7 @@ val hideMessageAdsPatch = bytecodePatch(
         match.method.addInstructionsWithLabels(match.insertionIndex, """
             invoke-static {}, Lcom/zing/zalo/MainApplication;->getAppContext()Landroid/content/Context;
             move-result-object v5
-            invoke-static {v5}, Lapp/template/extension/extension/NezumiSettings;->isMessageAdsHidden(Landroid/content/Context;)Z
+            invoke-static {v5}, $MESSAGES_TAB->isMessageAdsHidden(Landroid/content/Context;)Z
             move-result v5
             if-eqz v5, :nezumi_show_message_ad
             goto :nezumi_next_message_ad
@@ -110,4 +110,4 @@ val hideMessageAdsPatch = bytecodePatch(
 
         attachNezumiSettings("attachMessageAds")
     }
-}
+}

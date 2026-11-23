@@ -1,4 +1,4 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.ui;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -25,8 +25,10 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import java.lang.reflect.Constructor;
 
+import app.template.extension.zalo.appearance.CustomFont;
+
 /** Zalo-styled view builders shared by Nezumi screens: rows, switches, icons, groups, pages. */
-final class ZaloUi {
+public final class ZaloUi {
     private ZaloUi() { }
 
     static final int BLUE = 0xFF0068FF;
@@ -50,12 +52,12 @@ final class ZaloUi {
                 context.getResources().getDisplayMetrics());
     }
 
-    static boolean isDarkMode(Context context) {
+    public static boolean isDarkMode(Context context) {
         return (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
                 == Configuration.UI_MODE_NIGHT_YES;
     }
 
-    static boolean isDarkMode(Context context, View reference) {
+    public static boolean isDarkMode(Context context, View reference) {
         if (isDarkMode(context)) return true;
         TextView nativeLabel = findTextView(reference);
         if (nativeLabel == null) return false;
@@ -133,12 +135,12 @@ final class ZaloUi {
         return text;
     }
 
-    static View row(Context context, String title, Drawable icon, boolean chevron,
+    public static View row(Context context, String title, Drawable icon, boolean chevron,
                             boolean darkMode, TextView nativeTitle) {
         return row(context, title, icon, chevron, darkMode, nativeTitle, 56);
     }
 
-    static View row(Context context, String title, Drawable icon, boolean chevron,
+    public static View row(Context context, String title, Drawable icon, boolean chevron,
                             boolean darkMode, TextView nativeTitle, int heightDp) {
         LinearLayout wrapper = new LinearLayout(context);
         wrapper.setOrientation(LinearLayout.VERTICAL);
@@ -200,7 +202,7 @@ final class ZaloUi {
         return wrapper;
     }
 
-    static Drawable gearIcon(Context context) {
+    public static Drawable gearIcon(Context context) {
         try {
             byte[] bytes = Base64.decode(GEAR_ICON, Base64.DEFAULT);
             Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
@@ -213,7 +215,7 @@ final class ZaloUi {
         }
     }
 
-    static void addGroup(LinearLayout list, Context context, String title, boolean darkMode) {
+    public static void addGroup(LinearLayout list, Context context, String title, boolean darkMode) {
         View spacer = new View(context);
         spacer.setBackgroundColor(sectionColor(context, darkMode));
         list.addView(spacer, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 8)));
@@ -226,7 +228,7 @@ final class ZaloUi {
     }
 
     /** Settings row with a leading Zalo icon, a label and a trailing Zalo-style switch. */
-    static View toggleRow(LinearLayout list, Context context, String title, String icon, boolean checked,
+    public static View toggleRow(LinearLayout list, Context context, String title, String icon, boolean checked,
             boolean darkMode, CompoundButton.OnCheckedChangeListener listener) {
         View wrapper = row(context, title, zdsIcon(context, icon, darkMode), false, darkMode, null);
         LinearLayout content = (LinearLayout) ((ViewGroup) wrapper).getChildAt(0);
@@ -255,7 +257,7 @@ final class ZaloUi {
         return new ZaloToggle(context, darkMode);
     }
 
-    static Drawable zdsIcon(Context context, String name, boolean darkMode) {
+    public static Drawable zdsIcon(Context context, String name, boolean darkMode) {
         int id = context.getResources().getIdentifier("zds_ic_" + name + "_line_24", "drawable",
             context.getPackageName());
         if (id == 0) return null;
@@ -270,13 +272,13 @@ final class ZaloUi {
         }
     }
 
-    static TextView rowTitle(View row) {
+    public static TextView rowTitle(View row) {
         Object title = row.getTag(ROW_TITLE_KEY);
         return title instanceof TextView ? (TextView) title : findTextView(row);
     }
 
     /** Hide the separator under the last visible row of each group, like Zalo's own lists. */
-    static void trimGroupDividers(LinearLayout list) {
+    public static void trimGroupDividers(LinearLayout list) {
         View lastRow = null;
         for (int index = 0; index <= list.getChildCount(); index++) {
             View child = index < list.getChildCount() ? list.getChildAt(index) : null;
@@ -292,7 +294,7 @@ final class ZaloUi {
         }
     }
 
-    static Dialog page(Context context, String title, boolean darkMode) {
+    public static Dialog page(Context context, String title, boolean darkMode) {
         Dialog page = new Dialog(context);
         page.requestWindowFeature(Window.FEATURE_NO_TITLE);
         LinearLayout screen = new LinearLayout(context);

@@ -1,4 +1,4 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.ui;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -8,7 +8,7 @@ import android.graphics.RectF;
 import android.widget.CompoundButton;
 
 /** Fallback drawn to Zalo's Switch.Medium spec: 40x24dp pill track, 20dp thumb, 2dp inset. */
-final class ZaloToggle extends CompoundButton {
+public final class ZaloToggle extends CompoundButton {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF track = new RectF();
     private final int onColor;

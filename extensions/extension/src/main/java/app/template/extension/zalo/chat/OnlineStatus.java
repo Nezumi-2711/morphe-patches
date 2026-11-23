@@ -1,4 +1,4 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.chat;
 
 import android.content.Context;
 import android.view.View;
@@ -9,8 +9,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import app.template.extension.zalo.settings.NezumiPrefs;
+import app.template.extension.zalo.shared.ZaloEnv;
+
 /** Private online status: masks our own presence while still showing peers online. */
-final class OnlineStatus {
+public final class OnlineStatus {
     private OnlineStatus() { }
 
     private static final Object ONLINE_LOCK = new Object();
@@ -32,14 +35,14 @@ final class OnlineStatus {
     private static String onlineAccount;
 
     public static boolean shouldFetchOnlineStatus() {
-        return NezumiSettings.isOnlineHidden() || NezumiSettings.originalOnlineSharing();
+        return isOnlineHidden() || originalOnlineSharing();
     }
 
     public static void traceOnlineResponse(org.json.JSONObject data) {
         try {
             org.json.JSONArray onlines = data.optJSONArray("onlines");
-            android.util.Log.i("NezumiOnline", "onlineResponse sharing=" + NezumiSettings.originalOnlineSharing()
-                + " hidden=" + NezumiSettings.isOnlineHidden() + " hasOnlines=" + data.has("onlines")
+            android.util.Log.i("NezumiOnline", "onlineResponse sharing=" + originalOnlineSharing()
+                + " hidden=" + isOnlineHidden() + " hasOnlines=" + data.has("onlines")
                 + " arrayPresent=" + (onlines != null)
                 + " count=" + (onlines == null ? -1 : onlines.length()));
         } catch (RuntimeException ignored) {
@@ -49,8 +52,8 @@ final class OnlineStatus {
 
     public static void traceLastSeenResponse(org.json.JSONObject data) {
         try {
-            android.util.Log.i("NezumiOnline", "lastSeenResponse sharing=" + NezumiSettings.originalOnlineSharing()
-                + " hidden=" + NezumiSettings.isOnlineHidden() + " hasTimestamp=" + data.has("timestamp")
+            android.util.Log.i("NezumiOnline", "lastSeenResponse sharing=" + originalOnlineSharing()
+                + " hidden=" + isOnlineHidden() + " hasTimestamp=" + data.has("timestamp")
                 + " timestampPositive=" + (data.optLong("timestamp") > 0)
                 + " hasVisibility=" + data.has("settingOnlineStatus")
                 + " visibility=" + data.optInt("settingOnlineStatus", -1));
@@ -62,8 +65,8 @@ final class OnlineStatus {
     public static void traceFriendListResponse(org.json.JSONObject data) {
         try {
             org.json.JSONArray onlines = data.optJSONArray("onlines");
-            android.util.Log.i("NezumiOnline", "friendListResponse sharing=" + NezumiSettings.originalOnlineSharing()
-                + " hidden=" + NezumiSettings.isOnlineHidden() + " arrayPresent=" + (onlines != null)
+            android.util.Log.i("NezumiOnline", "friendListResponse sharing=" + originalOnlineSharing()
+                + " hidden=" + isOnlineHidden() + " arrayPresent=" + (onlines != null)
                 + " count=" + (onlines == null ? -1 : onlines.length()));
         } catch (RuntimeException ignored) {
             android.util.Log.w("NezumiOnline", "friendListResponse probe unavailable");
@@ -202,7 +205,7 @@ final class OnlineStatus {
             CharSequence text = subtitle.getText();
             boolean managed = text instanceof android.text.Spanned
                 && ((android.text.Spanned) text).getSpanStart(marker) >= 0;
-            if (NezumiSettings.isOnlineHidden() && online && (nativeClear || android.text.TextUtils.isEmpty(text) || managed)) {
+            if (isOnlineHidden() && online && (nativeClear || android.text.TextUtils.isEmpty(text) || managed)) {
                 android.text.SpannableString label = new android.text.SpannableString(
                     ZaloEnv.isVietnamese(subtitle.getContext()) ? "Đang hoạt động" : "Online");
                 label.setSpan(marker, 0, label.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -225,7 +228,7 @@ final class OnlineStatus {
                 scheduled = false;
                 return;
             }
-            if (!android.text.TextUtils.isEmpty(userId) && NezumiSettings.isOnlineHidden()
+            if (!android.text.TextUtils.isEmpty(userId) && isOnlineHidden()
                     && subtitle.getWindowVisibility() == View.VISIBLE && subtitle.hasWindowFocus()
                     && subtitle.getRootView().isShown()) {
                 long now = android.os.SystemClock.elapsedRealtime();
@@ -235,7 +238,7 @@ final class OnlineStatus {
                     CHAT_REFRESH.set(true);
                     try {
                         android.util.Log.i("NezumiOnline", "chatRefresh attempt");
-                        NezumiSettings.requestChatOnlineList();
+                        requestChatOnlineList();
                     } catch (LinkageError | RuntimeException ignored) {
                         android.util.Log.w("NezumiOnline", "Chat online refresh unavailable");
                     } finally {
@@ -250,10 +253,37 @@ final class OnlineStatus {
 
     public static int mapOnlineState(int state) {
         Context context = ZaloEnv.appContext();
-        boolean hidden = NezumiPrefs.bool(context, NezumiPrefs.HIDE_ONLINE_STATUS, false);
+        boolean hidden = isOnlineHidden();
         int mapped = state == 103 && hidden ? 102 : state;
         android.util.Log.i("NezumiOnline", "socketState=" + state + " mapped=" + mapped
             + " hidden=" + hidden + " contextAvailable=" + (context != null));
         return mapped;
+    }
+
+    // Bridge stubs: ViewOnlineStatusPrivatelyPatch replaces these bodies with calls into Zalo,
+    // so their names and signatures must not change.
+
+    public static void requestChatOnlineList() {
+        throw new IllegalStateException("Chat online request bridge was not patched");
+    }
+
+    static boolean isOnlineHidden() {
+        return NezumiPrefs.bool(ZaloEnv.appContext(), NezumiPrefs.HIDE_ONLINE_STATUS, false);
+    }
+
+    public static void publishOnlineState(int state) {
+        throw new IllegalStateException("Online state bridge was not patched");
+    }
+
+    public static boolean originalOnlineSharing() {
+        return false;
+    }
+
+    public static void applyOriginalOnlineSharing(boolean enabled) {
+        throw new IllegalStateException("Online sharing setter bridge was not patched");
+    }
+
+    public static boolean isOnlinePatchAvailable() {
+        return false;
     }
 }

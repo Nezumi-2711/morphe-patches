@@ -1,15 +1,18 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.messages;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import app.template.extension.zalo.settings.NezumiPrefs;
+import app.template.extension.zalo.shared.ZaloEnv;
+
 /** Hides and auto-mutes Official Account conversations in the Messages tab. */
-final class OfficialAccounts {
+public final class OfficialAccounts {
     private OfficialAccounts() { }
 
     private static final Object OA_LOCK = new Object();
@@ -17,14 +20,14 @@ final class OfficialAccounts {
     private static final HashMap<String, Long> OA_ATTEMPTS = new HashMap<>();
 
     public static void setOAMessagesHidden(Context context, boolean hidden) {
-        if (context == null || NezumiSettings.isOAMessagesHidden(context) == hidden) return;
+        if (context == null || isOAMessagesHidden(context) == hidden) return;
         NezumiPrefs.of(context).edit()
             .putBoolean(NezumiPrefs.HIDE_OA_MESSAGES, hidden).apply();
         refreshOAMessages();
     }
 
     public static void setOAMessagesMuted(Context context, boolean muted) {
-        if (context == null || NezumiSettings.isOAMessagesMuted(context) == muted) return;
+        if (context == null || isOAMessagesMuted(context) == muted) return;
         NezumiPrefs.of(context).edit()
             .putBoolean(NezumiPrefs.MUTE_OA_MESSAGES, muted).apply();
         refreshOAMessages();
@@ -60,8 +63,8 @@ final class OfficialAccounts {
     public static List filterOfficialAccounts(List items) {
         Context context = ZaloEnv.appContext();
         if (context == null || items == null) return items;
-        boolean hide = NezumiSettings.isOAMessagesHidden(context);
-        boolean mute = NezumiSettings.isOAMessagesMuted(context);
+        boolean hide = isOAMessagesHidden(context);
+        boolean mute = isOAMessagesMuted(context);
         String account = ZaloEnv.currentAccount();
         if (!mute) unmuteTrackedOfficialAccounts(context, account);
         if (!hide && !mute) return items;
@@ -180,5 +183,13 @@ final class OfficialAccounts {
             android.util.Log.w("NezumiOA", "Automatic unmute unavailable");
         }
         if (changed) storeTrackedOfficialAccounts(context, account, tracked);
+    }
+
+    public static boolean isOAMessagesHidden(Context context) {
+        return NezumiPrefs.bool(context, NezumiPrefs.HIDE_OA_MESSAGES, true);
+    }
+
+    public static boolean isOAMessagesMuted(Context context) {
+        return NezumiPrefs.bool(context, NezumiPrefs.MUTE_OA_MESSAGES, true);
     }
 }

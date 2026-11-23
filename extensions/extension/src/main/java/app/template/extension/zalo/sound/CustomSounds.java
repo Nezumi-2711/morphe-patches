@@ -1,4 +1,4 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.sound;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -16,11 +16,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import app.template.extension.zalo.settings.NezumiPrefs;
 
 public final class CustomSounds extends Fragment {
     private static final String KIND = "sound_kind";

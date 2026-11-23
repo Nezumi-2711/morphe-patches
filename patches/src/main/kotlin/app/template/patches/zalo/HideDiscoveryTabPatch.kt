@@ -69,8 +69,8 @@ val hideDiscoveryTabPatch = bytecodePatch(
         val instructions = method.implementation!!.instructions.toList()
         val gateRegister = (instructions[gateIndex] as OneRegisterInstruction).registerA
         method.replaceInstruction(gateIndex,
-            "invoke-static {}, Lapp/template/extension/extension/NezumiSettings;->isDiscoveryHidden()Z")
+            "invoke-static {}, $DISCOVERY_TAB->isDiscoveryHidden()Z")
         method.addInstructions(gateIndex + 1, "move-result v$gateRegister\nxor-int/lit8 v$gateRegister, v$gateRegister, 0x1")
         attachNezumiSettings("attachDiscovery")
     }
-}
+}

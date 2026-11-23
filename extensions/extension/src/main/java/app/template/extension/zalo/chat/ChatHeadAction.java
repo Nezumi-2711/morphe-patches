@@ -1,17 +1,15 @@
-package app.template.extension.extension;
+package app.template.extension.zalo.chat;
 
-import android.content.Context;
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 public final class ChatHeadAction {
