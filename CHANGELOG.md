@@ -7,7 +7,7 @@
 
 ### ✨ New Features
 
-* **zalo:** add AMOLED dark theme patch ([f4e10c9](https://github.com/Nezumi-2711/morphe-patches/commit/f4e10c90b71113c21d2668bca598f0ecbf20a1d1)), closes [#121212](https://github.com/Nezumi-2711/morphe-patches/issues/121212) [#171717](https://github.com/Nezumi-2711/morphe-patches/issues/171717)
+* **zalo:** add AMOLED dark theme patch ([f4e10c9](https://github.com/Nezumi-2711/morphe-patches/commit/f4e10c90b71113c21d2668bca598f0ecbf20a1d1))
 * **zalo:** enable all patches by default except Clone package ([7e6a25e](https://github.com/Nezumi-2711/morphe-patches/commit/7e6a25e6dc446c22bc2241aabf5b86f107d48009))
 * **zalo:** restyle Nezumi's Settings with Zalo switches and leading icons ([9ae7416](https://github.com/Nezumi-2711/morphe-patches/commit/9ae7416536357d2938d6b2cbced2bf8853b0310e))
 
