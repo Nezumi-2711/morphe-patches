@@ -34,6 +34,8 @@ import java.lang.reflect.Constructor;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.nio.charset.StandardCharsets;
@@ -48,6 +50,11 @@ public final class NezumiSettings {
     private static final String HIDE_DELIVERY_RECEIPTS = "hide_delivery_receipts";
     private static final String HIDE_MEDIA_BOX = "hide_media_box";
     private static final String HIDE_BUSINESS_BOX = "hide_business_box";
+    private static final String HIDE_OA_MESSAGES = "hide_oa_messages";
+    private static final String MUTE_OA_MESSAGES = "mute_oa_messages";
+    private static final String OA_MUTED_UIDS = "oa_muted_uids:";
+    private static final String HIDE_MESSAGE_ADS = "hide_message_ads";
+    private static final String HIDE_FEED_ADS = "hide_feed_ads";
     private static final String KEEP_RECALLED_MESSAGES = "keep_recalled_messages";
     private static final String HIDE_ONLINE_STATUS = "hide_online_status";
     private static final String HIDE_DISCOVERY = "hide_discovery";
@@ -63,6 +70,9 @@ public final class NezumiSettings {
     private static final int FEATURE_DELIVERY_RECEIPTS = 1 << 3;
     private static final int FEATURE_MEDIA_BOX = 1 << 4;
     private static final int FEATURE_BUSINESS_BOX = 1 << 10;
+    private static final int FEATURE_OA_MESSAGES = 1 << 12;
+    private static final int FEATURE_MESSAGE_ADS = 1 << 13;
+    private static final int FEATURE_FEED_ADS = 1 << 11;
     private static final int FEATURE_RECALLED_MESSAGES = 1 << 8;
     private static final int FEATURE_ONLINE_STATUS = 1 << 5;
     private static final int FEATURE_CUSTOM_FONT = 1 << 6;
@@ -71,6 +81,8 @@ public final class NezumiSettings {
     private static final Object ONLINE_LOCK = new Object();
     private static final Set<String> ONLINE_USERS = new HashSet<>();
     private static final Object RECALL_LOCK = new Object();
+    private static final Object OA_LOCK = new Object();
+    private static final HashMap<String, Long> OA_ATTEMPTS = new HashMap<>();
     private static final WeakHashMap<View, Boolean> RECALL_ROWS = new WeakHashMap<>();
     private static String recallAccount;
     private static Set<String> recalledMessages = new HashSet<>();
@@ -120,6 +132,237 @@ public final class NezumiSettings {
     public static boolean isBusinessBoxHidden(Context context) {
         return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .getBoolean(HIDE_BUSINESS_BOX, false);
+    }
+
+    public static boolean isOAMessagesHidden(Context context) {
+        return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(HIDE_OA_MESSAGES, true);
+    }
+
+    public static boolean isMessageAdsHidden(Context context) {
+        return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(HIDE_MESSAGE_ADS, false);
+    }
+
+    public static boolean isOAMessagesMuted(Context context) {
+        return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(MUTE_OA_MESSAGES, true);
+    }
+
+    public static void setOAMessagesHidden(Context context, boolean hidden) {
+        if (context == null || isOAMessagesHidden(context) == hidden) return;
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putBoolean(HIDE_OA_MESSAGES, hidden).apply();
+        refreshOAMessages();
+    }
+
+    public static void setOAMessagesMuted(Context context, boolean muted) {
+        if (context == null || isOAMessagesMuted(context) == muted) return;
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putBoolean(MUTE_OA_MESSAGES, muted).apply();
+        refreshOAMessages();
+    }
+
+    private static void refreshOAMessages() {
+        synchronized (OA_LOCK) {
+            OA_ATTEMPTS.clear();
+        }
+        try {
+            // MessageManager singleton p8g.w(); M() reschedules the tab message list rebuild.
+            Object repository = Class.forName("p8g").getMethod("w").invoke(null);
+            repository.getClass().getMethod("M").invoke(repository);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+            android.util.Log.w("NezumiOA", "Messages refresh unavailable");
+        }
+    }
+
+    private static boolean isOfficialAccount(Object conversation) {
+        if (conversation == null) return false;
+        try {
+            String uid = (String) conversation.getClass().getField("b").get(conversation);
+            if (uid == null || uid.isEmpty() || uid.startsWith("group_")) return false;
+            Object profile = Class.forName("huj").getMethod("l", String.class).invoke(null, uid);
+            if (profile == null) profile = conversation.getClass().getField("a").get(conversation);
+            if (profile == null) return false;
+            return Boolean.TRUE.equals(profile.getClass().getMethod("B2").invoke(profile));
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+            return false;
+        }
+    }
+
+    public static List filterOfficialAccounts(List items) {
+        Context context = onlineContext();
+        if (context == null || items == null) return items;
+        boolean hide = isOAMessagesHidden(context);
+        boolean mute = isOAMessagesMuted(context);
+        String account = currentOnlineAccount();
+        if (!mute) unmuteTrackedOfficialAccounts(context, account);
+        if (!hide && !mute) return items;
+        ArrayList filtered = hide ? new ArrayList(items.size()) : null;
+        for (Object item : items) {
+            boolean official = false;
+            try {
+                if (item != null && Class.forName("r24").isInstance(item)) {
+                    Object conversation = item.getClass().getField("f").get(item);
+                    official = isOfficialAccount(conversation);
+                    if (official && mute) muteOfficialAccount(context, account, conversation);
+                }
+            } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) { }
+            if (hide && !official) filtered.add(item);
+        }
+        return hide ? filtered : items;
+    }
+
+    private static boolean claimOAAttempt(String key) {
+        long now = android.os.SystemClock.elapsedRealtime();
+        synchronized (OA_LOCK) {
+            Long attemptedAt = OA_ATTEMPTS.get(key);
+            if (attemptedAt != null && now - attemptedAt < 60000) return false;
+            OA_ATTEMPTS.put(key, now);
+            return true;
+        }
+    }
+
+    private static String oaMutedKey(String account) {
+        return OA_MUTED_UIDS + account;
+    }
+
+    private static Set<String> trackedOfficialAccounts(Context context, String account) {
+        Set<String> stored = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getStringSet(oaMutedKey(account), null);
+        return stored == null ? new HashSet<>() : new HashSet<>(stored);
+    }
+
+    private static void storeTrackedOfficialAccounts(Context context, String account, Set<String> uids) {
+        SharedPreferences.Editor editor = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit();
+        if (uids.isEmpty()) editor.remove(oaMutedKey(account));
+        else editor.putStringSet(oaMutedKey(account), uids);
+        editor.apply();
+    }
+
+    private static Object nativeMuteRepository() throws ReflectiveOperationException {
+        Object dispatcher = Class.forName("kc7").getMethod("e").invoke(null);
+        return dispatcher.getClass().getField("j").get(dispatcher);
+    }
+
+    private static void muteOfficialAccount(Context context, String account, Object conversation) {
+        String uid;
+        try {
+            uid = (String) conversation.getClass().getField("b").get(conversation);
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return;
+        }
+        if (uid == null || uid.isEmpty()) return;
+        if (account == null || account.isEmpty() || uid.equals(account)) return;
+        if (!claimOAAttempt("m:" + account + ":" + uid)) return;
+        try {
+            Object dispatcher = Class.forName("kc7").getMethod("e").invoke(null);
+            Object nativeRepository = dispatcher.getClass().getField("j").get(dispatcher);
+            Object existing = nativeRepository.getClass().getMethod("b", String.class).invoke(nativeRepository, uid);
+            if (existing == null || existing.getClass().getField("d").getLong(existing) >= 0
+                    || existing.getClass().getField("e").getInt(existing) != 0) {
+                Class<?> itemClass = Class.forName(
+                    "com.zing.zalo.comm.mutechatsetting.data.model.MuteSettingItem");
+                Object item = itemClass.getConstructor(int.class, int.class, long.class, long.class,
+                    String.class).newInstance(1, 0, System.currentTimeMillis(), -1L, uid);
+                Class<?> trackingClass = Class.forName("v3h");
+                Object tracking = Enum.valueOf((Class) trackingClass, "TAB_MSG");
+                Class<?> entryClass = Class.forName("t1h");
+                Object entry = Enum.valueOf((Class) entryClass, "MUTE_SHEET");
+                Class<?> eventClass = Class.forName("ap");
+                Object event = eventClass.getConstructor(itemClass, trackingClass, entryClass)
+                    .newInstance(item, tracking, entry);
+                Object flow = dispatcher.getClass().getMethod("p1", Object.class)
+                    .invoke(dispatcher, event);
+                collectNativeFlow(flow);
+                Set<String> tracked = trackedOfficialAccounts(context, account);
+                if (tracked.add(uid)) storeTrackedOfficialAccounts(context, account, tracked);
+                android.util.Log.i("NezumiOA", "Permanent mute dispatched");
+            }
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+            android.util.Log.w("NezumiOA", "Automatic mute unavailable");
+        }
+    }
+
+    private static void unmuteTrackedOfficialAccounts(Context context, String account) {
+        if (account == null || account.isEmpty()) return;
+        Set<String> tracked = trackedOfficialAccounts(context, account);
+        if (tracked.isEmpty()) return;
+        boolean changed = false;
+        try {
+            Object nativeRepository = nativeMuteRepository();
+            java.lang.reflect.Method lookup = nativeRepository.getClass().getMethod("b", String.class);
+            for (String uid : new ArrayList<>(tracked)) {
+                // Native success removes the uid from the mute map, so null confirms the unmute.
+                if (lookup.invoke(nativeRepository, uid) == null) {
+                    tracked.remove(uid);
+                    changed = true;
+                    continue;
+                }
+                if (!claimOAAttempt("u:" + account + ":" + uid)) continue;
+                Object useCase = Class.forName("kc7").getMethod("i").invoke(null);
+                Class<?> trackingClass = Class.forName("v3h");
+                Object tracking = Enum.valueOf((Class) trackingClass, "TAB_MSG");
+                Object event = Class.forName("bdl").getConstructor(String.class, int.class, trackingClass)
+                    .newInstance(uid, 1, tracking);
+                Object flow = useCase.getClass().getMethod("p1", Object.class).invoke(useCase, event);
+                collectNativeFlow(flow);
+                android.util.Log.i("NezumiOA", "Unmute dispatched");
+            }
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+            android.util.Log.w("NezumiOA", "Automatic unmute unavailable");
+        }
+        if (changed) storeTrackedOfficialAccounts(context, account, tracked);
+    }
+
+    private static void collectNativeFlow(Object flow) throws ReflectiveOperationException {
+        Object ioContext = Class.forName("kotlinx.coroutines.scheduling.DefaultIoScheduler")
+            .getField("c").get(null);
+        Class<?> scopeClass = Class.forName("kotlinx.coroutines.CoroutineScope");
+        Object scope = null;
+        for (java.lang.reflect.Method method : Class.forName("kotlinx.coroutines.CoroutineScopeKt").getMethods()) {
+            Class<?>[] types = method.getParameterTypes();
+            if (java.lang.reflect.Modifier.isStatic(method.getModifiers()) && types.length == 1
+                && types[0].isInstance(ioContext) && scopeClass.isAssignableFrom(method.getReturnType())) {
+                scope = method.invoke(null, ioContext);
+                break;
+            }
+        }
+        Class<?> flowClass = Class.forName("kotlinx.coroutines.flow.Flow");
+        Class<?> flowKtClass = Class.forName("kotlinx.coroutines.flow.FlowKt");
+        Class<?> jobClass = Class.forName("kotlinx.coroutines.Job");
+        for (java.lang.reflect.Method method : flowKtClass.getMethods()) {
+            Class<?>[] types = method.getParameterTypes();
+            if (scope != null && java.lang.reflect.Modifier.isStatic(method.getModifiers())
+                && types.length == 2 && types[0] == flowClass && types[1] == scopeClass
+                && jobClass.isAssignableFrom(method.getReturnType())) {
+                method.invoke(null, flow, scope);
+                return;
+            }
+        }
+        throw new NoSuchMethodException("launchIn");
+    }
+
+    public static List filterFeedAds(List items) {
+        if (!isFeedAdsHidden(onlineContext()) || items == null || items.isEmpty()) return items;
+        ArrayList filtered = new ArrayList(items.size());
+        for (Object item : items) {
+            if (!isFeedAdItem(item)) filtered.add(item);
+        }
+        return filtered;
+    }
+
+    private static boolean isFeedAdsHidden(Context context) {
+        return context != null && context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(HIDE_FEED_ADS, false);
+    }
+
+    private static boolean isFeedAdItem(Object item) {
+        try {
+            return item != null && item.getClass().getField("c").getInt(item) == 0x51;
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return false;
+        }
     }
 
     public static boolean isRecalledMessagesKept(Context context) {
@@ -250,9 +493,18 @@ public final class NezumiSettings {
             Object message = base.getMethod("getMessage").invoke(row);
             Object binding = base.getField("j").get(row);
             if (message == null || binding == null) return;
-            base.getMethod("p2", Class.forName("j20.q"), Class.forName("zg1.a"))
-                .invoke(row, message, binding);
-            base.getField("j1").setBoolean(row, false);
+            java.lang.reflect.Method bind = null;
+            for (java.lang.reflect.Method candidate : base.getMethods()) {
+                Class<?>[] types = candidate.getParameterTypes();
+                if (candidate.getName().equals("p2") && types.length == 2
+                    && types[0].isInstance(message) && types[1].isInstance(binding)) {
+                    bind = candidate;
+                    break;
+                }
+            }
+            if (bind == null) throw new NoSuchMethodException("p2");
+            bind.invoke(row, message, binding);
+            // p2 rebinds and requests layout on its own.
             row.requestLayout();
             row.invalidate();
         } catch (ReflectiveOperationException | RuntimeException ignored) {
@@ -523,15 +775,11 @@ public final class NezumiSettings {
     }
 
     private static void refreshDiscoveryTabs() {
-        String[] configurationClasses = { "if1.y", "kj1.v" };
-        for (String className : configurationClasses) {
-            try {
-                Object configuration = Class.forName(className).getMethod("h").invoke(null);
-                configuration.getClass().getMethod("o").invoke(configuration);
-                configuration.getClass().getMethod("q").invoke(configuration);
-                return;
-            } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
-            }
+        try {
+            Object configuration = Class.forName("y5f").getMethod("h").invoke(null);
+            configuration.getClass().getMethod("o").invoke(configuration);
+            configuration.getClass().getMethod("q").invoke(configuration);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
         }
     }
 
@@ -589,6 +837,18 @@ public final class NezumiSettings {
 
     public static void attachBusinessBox(View root, View anchor) {
         attach(root, anchor, FEATURE_BUSINESS_BOX);
+    }
+
+    public static void attachOAMessages(View root, View anchor) {
+        attach(root, anchor, FEATURE_OA_MESSAGES);
+    }
+
+    public static void attachMessageAds(View root, View anchor) {
+        attach(root, anchor, FEATURE_MESSAGE_ADS);
+    }
+
+    public static void attachFeedAds(View root, View anchor) {
+        attach(root, anchor, FEATURE_FEED_ADS);
     }
 
     public static void attachRecalledMessages(View root, View anchor) {
@@ -736,10 +996,9 @@ public final class NezumiSettings {
         return text;
     }
 
-    private static boolean isVietnamese(Context context) {
+    static boolean isVietnamese(Context context) {
         try {
-            Object language = Class.forName("com.google.android.play.core.appupdate.b")
-                    .getField("b").get(null);
+            Object language = Class.forName("z0r").getField("b").get(null);
             if ("vi".equals(language)) return true;
             if ("en".equals(language)) return false;
         } catch (ReflectiveOperationException | SecurityException ignored) { }
@@ -844,6 +1103,9 @@ public final class NezumiSettings {
         String deliveryLabel = vietnamese ? "Ẩn trạng thái đã nhận" : "Hide delivery receipts";
         String mediaBoxLabel = vietnamese ? "Ẩn Media Box" : "Hide Media Box";
         String businessBoxLabel = vietnamese ? "Ẩn Business Box" : "Hide Business Box";
+        String oaMessagesLabel = vietnamese ? "Ẩn tài khoản OA" : "Hide OA accounts";
+        String oaMuteLabel = vietnamese ? "Tắt thông báo tài khoản OA" : "Mute OA accounts";
+        String feedAdsLabel = vietnamese ? "Ẩn quảng cáo Bảng tin" : "Hide feed ads";
         String recalledMessagesLabel = vietnamese ? "Giữ tin nhắn đã thu hồi" :
             "Keep recalled messages";
         String onlineLabel = vietnamese ? "Ẩn trạng thái hoạt động" : "Hide activity status";
@@ -1023,7 +1285,29 @@ public final class NezumiSettings {
         list.addView(discoveryItem, new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
         }
-        if ((features & (FEATURE_MEDIA_BOX | FEATURE_BUSINESS_BOX)) != 0) {
+        if ((features & FEATURE_FEED_ADS) != 0) {
+        addGroup(list, context, vietnamese ? "Bảng tin" : "Feed", darkMode);
+        LinearLayout feedAdsItem = new LinearLayout(context);
+        feedAdsItem.setGravity(Gravity.CENTER_VERTICAL);
+        feedAdsItem.setBackgroundColor(surfaceColor(context, darkMode));
+        feedAdsItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
+        feedAdsItem.addView(label(context, feedAdsLabel, darkMode),
+            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        Switch feedAdsToggle = new Switch(context);
+        feedAdsToggle.setContentDescription(feedAdsLabel);
+        feedAdsToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
+        feedAdsToggle.setTrackTintList(new ColorStateList(
+            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
+            new int[] { BLUE, 0xFFBDBDBD }));
+        feedAdsToggle.setChecked(prefs.getBoolean(HIDE_FEED_ADS, false));
+        feedAdsToggle.setOnCheckedChangeListener((button, checked) ->
+            prefs.edit().putBoolean(HIDE_FEED_ADS, checked).apply());
+        feedAdsItem.addView(feedAdsToggle);
+        feedAdsItem.setOnClickListener(view -> feedAdsToggle.setChecked(!feedAdsToggle.isChecked()));
+        list.addView(feedAdsItem, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        }
+        if ((features & (FEATURE_MEDIA_BOX | FEATURE_BUSINESS_BOX | FEATURE_OA_MESSAGES | FEATURE_MESSAGE_ADS)) != 0) {
         addGroup(list, context, vietnamese ? "Hội thoại" : "Conversation", darkMode);
         }
         if ((features & FEATURE_MEDIA_BOX) != 0) {
@@ -1064,6 +1348,68 @@ public final class NezumiSettings {
         businessBoxItem.addView(businessBoxToggle);
         businessBoxItem.setOnClickListener(view -> businessBoxToggle.setChecked(!businessBoxToggle.isChecked()));
         list.addView(businessBoxItem, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        }
+        if ((features & FEATURE_OA_MESSAGES) != 0) {
+        LinearLayout oaMessagesItem = new LinearLayout(context);
+        oaMessagesItem.setGravity(Gravity.CENTER_VERTICAL);
+        oaMessagesItem.setBackgroundColor(surfaceColor(context, darkMode));
+        oaMessagesItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
+        oaMessagesItem.addView(label(context, oaMessagesLabel, darkMode),
+            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        Switch oaMessagesToggle = new Switch(context);
+        oaMessagesToggle.setContentDescription(oaMessagesLabel);
+        oaMessagesToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
+        oaMessagesToggle.setTrackTintList(new ColorStateList(
+            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
+            new int[] { BLUE, 0xFFBDBDBD }));
+        oaMessagesToggle.setChecked(prefs.getBoolean(HIDE_OA_MESSAGES, true));
+        oaMessagesToggle.setOnCheckedChangeListener((button, checked) ->
+            setOAMessagesHidden(context, checked));
+        oaMessagesItem.addView(oaMessagesToggle);
+        oaMessagesItem.setOnClickListener(view -> oaMessagesToggle.setChecked(!oaMessagesToggle.isChecked()));
+        list.addView(oaMessagesItem, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        LinearLayout oaMuteItem = new LinearLayout(context);
+        oaMuteItem.setGravity(Gravity.CENTER_VERTICAL);
+        oaMuteItem.setBackgroundColor(surfaceColor(context, darkMode));
+        oaMuteItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
+        oaMuteItem.addView(label(context, oaMuteLabel, darkMode),
+            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        Switch oaMuteToggle = new Switch(context);
+        oaMuteToggle.setContentDescription(oaMuteLabel);
+        oaMuteToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
+        oaMuteToggle.setTrackTintList(new ColorStateList(
+            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
+            new int[] { BLUE, 0xFFBDBDBD }));
+        oaMuteToggle.setChecked(prefs.getBoolean(MUTE_OA_MESSAGES, true));
+        oaMuteToggle.setOnCheckedChangeListener((button, checked) ->
+            setOAMessagesMuted(context, checked));
+        oaMuteItem.addView(oaMuteToggle);
+        oaMuteItem.setOnClickListener(view -> oaMuteToggle.setChecked(!oaMuteToggle.isChecked()));
+        list.addView(oaMuteItem, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
+        }
+        if ((features & FEATURE_MESSAGE_ADS) != 0) {
+        String messageAdsLabel = vietnamese ? "Ẩn quảng cáo trong Messages" : "Hide ads in Messages";
+        LinearLayout messageAdsItem = new LinearLayout(context);
+        messageAdsItem.setGravity(Gravity.CENTER_VERTICAL);
+        messageAdsItem.setBackgroundColor(surfaceColor(context, darkMode));
+        messageAdsItem.setPadding(dp(context, 16), 0, dp(context, 16), 0);
+        messageAdsItem.addView(label(context, messageAdsLabel, darkMode),
+            new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        Switch messageAdsToggle = new Switch(context);
+        messageAdsToggle.setContentDescription(messageAdsLabel);
+        messageAdsToggle.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
+        messageAdsToggle.setTrackTintList(new ColorStateList(
+            new int[][] { new int[] { android.R.attr.state_checked }, new int[] {} },
+            new int[] { BLUE, 0xFFBDBDBD }));
+        messageAdsToggle.setChecked(prefs.getBoolean(HIDE_MESSAGE_ADS, false));
+        messageAdsToggle.setOnCheckedChangeListener((button, checked) ->
+            prefs.edit().putBoolean(HIDE_MESSAGE_ADS, checked).apply());
+        messageAdsItem.addView(messageAdsToggle);
+        messageAdsItem.setOnClickListener(view -> messageAdsToggle.setChecked(!messageAdsToggle.isChecked()));
+        list.addView(messageAdsItem, new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 56)));
         }
         if ((features & FEATURE_CUSTOM_FONT) != 0) {
