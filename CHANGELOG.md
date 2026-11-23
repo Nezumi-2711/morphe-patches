@@ -1,3 +1,13 @@
+## [1.7.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/compare/v1.7.0-dev.1...v1.7.0-dev.2) (2026-11-23)
+
+### 🐛 Bug Fixes
+
+* **zalo:** keep Drive photo backup working under microG ([73d40d5](https://github.com/Nezumi-2711/morphe-patches/commit/73d40d534c1cd6ee2e64755128419232d6abb1da))
+
+### ✨ New Features
+
+* **zalo:** add AMOLED dark theme patch ([f4e10c9](https://github.com/Nezumi-2711/morphe-patches/commit/f4e10c90b71113c21d2668bca598f0ecbf20a1d1)), closes [#121212](https://github.com/Nezumi-2711/morphe-patches/issues/121212) [#171717](https://github.com/Nezumi-2711/morphe-patches/issues/171717)
+
 ## [1.7.0-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.6.0...v1.7.0-dev.1) (2026-11-23)
 
 ### ✨ New Features
