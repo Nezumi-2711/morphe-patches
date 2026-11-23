@@ -101,14 +101,24 @@ public final class ZaloUi {
         }
     }
 
+    // Dark-mode colors come from Zalo's own theme tokens so Nezumi screens follow
+    // the stock dark palette and the AMOLED dark theme patch alike.
     private static int surfaceColor(Context context, boolean darkMode) {
-        if (darkMode) return 0xFF121212;
+        if (darkMode) return attrColor(context, "layer_background", 0xFF121212);
         return resourceColor(context, "ui_background", themeColor(context, android.R.attr.colorBackground,
             0xFFFFFFFF));
     }
 
     private static int sectionColor(Context context, boolean darkMode) {
-        return darkMode ? 0xFF1E1E1E : SECTION;
+        return darkMode ? attrColor(context, "surface_background", 0xFF1E1E1E) : SECTION;
+    }
+
+    private static int dividerColor(Context context, boolean darkMode) {
+        return darkMode ? attrColor(context, "divider_01", 0xFF303030) : DIVIDER;
+    }
+
+    private static int headerColor(Context context, boolean darkMode) {
+        return darkMode ? attrColor(context, "header_blue_container", HEADER_BLUE) : HEADER_BLUE;
     }
 
     private static int textColor(Context context, boolean darkMode) {
@@ -190,8 +200,7 @@ public final class ZaloUi {
         }
         wrapper.addView(content, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, heightDp)));
         View divider = new View(context);
-        divider.setBackgroundColor(resourceColor(context, "divider_01",
-            darkMode ? 0xFF303030 : DIVIDER));
+        divider.setBackgroundColor(dividerColor(context, darkMode));
         LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 1));
         // The entry row (49dp) keeps the inset that lines up with Zalo's native list.
@@ -221,7 +230,7 @@ public final class ZaloUi {
         list.addView(spacer, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 8)));
         TextView heading = label(context, title, darkMode);
         heading.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-        heading.setTextColor(0xFF1255B8);
+        heading.setTextColor(darkMode ? BLUE_DARK : 0xFF1255B8);
         heading.setPadding(dp(context, 16), 0, 0, 0);
         heading.setBackgroundColor(surfaceColor(context, darkMode));
         list.addView(heading, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 48)));
@@ -299,14 +308,14 @@ public final class ZaloUi {
         page.requestWindowFeature(Window.FEATURE_NO_TITLE);
         LinearLayout screen = new LinearLayout(context);
         screen.setOrientation(LinearLayout.VERTICAL);
-        screen.setBackgroundColor(HEADER_BLUE);
+        screen.setBackgroundColor(headerColor(context, darkMode));
         screen.setOnApplyWindowInsetsListener((view, insets) -> {
             view.setPadding(0, insets.getSystemWindowInsetTop(), 0, 0);
             return insets;
         });
         LinearLayout bar = new LinearLayout(context);
         bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setBackgroundColor(HEADER_BLUE);
+        bar.setBackgroundColor(headerColor(context, darkMode));
         ImageView back = new ImageView(context);
         int backId = context.getResources().getIdentifier(
             "zds_ic_arrow_left_line_24", "drawable", context.getPackageName());

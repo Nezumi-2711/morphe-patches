@@ -15,6 +15,7 @@ internal const val OFFICIAL_ACCOUNTS = "$EXTENSION/messages/OfficialAccounts;"
 internal const val FEED_ADS = "$EXTENSION/feed/FeedAds;"
 internal const val DISCOVERY_TAB = "$EXTENSION/navigation/DiscoveryTab;"
 internal const val CUSTOM_FONT = "$EXTENSION/appearance/CustomFont;"
+internal const val AMOLED_THEME = "$EXTENSION/appearance/AmoledTheme;"
 internal const val CUSTOM_SOUNDS = "$EXTENSION/sound/CustomSounds;"
 internal const val MICROG_SUPPORT = "$EXTENSION/backup/ZaloMicroGSupport;"
 
