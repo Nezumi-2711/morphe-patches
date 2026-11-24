@@ -73,7 +73,7 @@
         ],
         "successComment": "${nextRelease.version.includes('-') ? '🧪 Included in pre-release' : '🚀 Released in'} [${nextRelease.gitTag}](${releases && releases[0] ? releases[0].url : ''}).${nextRelease.version.includes('-') ? ' This ticket stays open until the stable release.' : ' Closing this ticket.'}",
         "releasedLabels": ["${nextRelease.version.includes('-') ? 'in-prerelease' : 'released'}"],
-        "failComment": false
+        "failCommentCondition": false
       }
     ],
     [
