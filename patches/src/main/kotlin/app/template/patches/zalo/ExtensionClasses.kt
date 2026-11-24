@@ -21,6 +21,7 @@ internal const val CALL_RECORDER = "$EXTENSION/call/CallRecorder;"
 internal const val CALL_RECORDING_UI = "$EXTENSION/call/CallRecordingUi;"
 internal const val SAVE_MEDIA = "$EXTENSION/media/SaveMedia;"
 internal const val ZALO_VIDEO_SAVE = "$EXTENSION/media/ZaloVideoSave;"
+internal const val LOCAL_QUICK_MESSAGES = "$EXTENSION/quickmessage/LocalQuickMessages;"
 internal const val MICROG_SUPPORT = "$EXTENSION/backup/ZaloMicroGSupport;"
 internal const val DRIVE_TOKEN_RECOVERY = "$EXTENSION/backup/DriveTokenRecovery;"
 
