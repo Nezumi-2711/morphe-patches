@@ -17,6 +17,8 @@ internal const val DISCOVERY_TAB = "$EXTENSION/navigation/DiscoveryTab;"
 internal const val CUSTOM_FONT = "$EXTENSION/appearance/CustomFont;"
 internal const val AMOLED_THEME = "$EXTENSION/appearance/AmoledTheme;"
 internal const val CUSTOM_SOUNDS = "$EXTENSION/sound/CustomSounds;"
+internal const val CALL_RECORDER = "$EXTENSION/call/CallRecorder;"
+internal const val CALL_RECORDING_UI = "$EXTENSION/call/CallRecordingUi;"
 internal const val MICROG_SUPPORT = "$EXTENSION/backup/ZaloMicroGSupport;"
 internal const val DRIVE_TOKEN_RECOVERY = "$EXTENSION/backup/DriveTokenRecovery;"
 

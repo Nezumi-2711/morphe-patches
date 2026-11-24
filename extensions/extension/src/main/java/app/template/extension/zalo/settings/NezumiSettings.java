@@ -64,4 +64,8 @@ public final class NezumiSettings {
     public static void attachCustomSounds(View root, View anchor) {
         NezumiSettingsPage.attach(root, anchor, NezumiSettingsPage.FEATURE_CUSTOM_SOUNDS);
     }
+
+    public static void attachCallRecording(View root, View anchor) {
+        NezumiSettingsPage.attach(root, anchor, NezumiSettingsPage.FEATURE_CALL_RECORDING);
+    }
 }

@@ -12,6 +12,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import app.template.extension.zalo.appearance.CustomFont;
+import app.template.extension.zalo.call.CallRecorder;
 import app.template.extension.zalo.chat.OnlineStatus;
 import app.template.extension.zalo.messages.OfficialAccounts;
 import app.template.extension.zalo.navigation.DiscoveryTab;
@@ -50,6 +51,8 @@ public final class NezumiSettingsPage {
     static final int FEATURE_DISCOVERY = 1 << 7;
 
     static final int FEATURE_CUSTOM_SOUNDS = 1 << 9;
+
+    static final int FEATURE_CALL_RECORDING = 1 << 14;
 
     static void attach(View root, View anchor, int feature) {
         if (root == null || anchor == null || !(anchor.getParent() instanceof ViewGroup)) return;
@@ -232,6 +235,16 @@ public final class NezumiSettingsPage {
                 vietnamese ? "Âm báo tin nhắn" : "Notification sound", darkMode, vietnamese);
             addSoundRows(list, context, CustomSounds.RINGTONE, "call",
                 vietnamese ? "Nhạc chuông cuộc gọi" : "Incoming-call ringtone", darkMode, vietnamese);
+        }
+        if ((features & FEATURE_CALL_RECORDING) != 0) {
+            ZaloUi.addGroup(list, context, vietnamese ? "Cuộc gọi" : "Calls", darkMode);
+            ZaloUi.toggleRow(list, context, vietnamese ? "Hiện nút ghi âm" : "Show record button", "call",
+                prefs.getBoolean(NezumiPrefs.CALL_RECORDING, true), darkMode,
+                (button, checked) -> prefs.edit().putBoolean(NezumiPrefs.CALL_RECORDING, checked).apply());
+            View folder = ZaloUi.row(context, vietnamese ? "Mở thư mục bản ghi" : "Open recordings folder",
+                ZaloUi.zdsIcon(context, "grid_view", darkMode), true, darkMode, null);
+            folder.setOnClickListener(view -> CallRecorder.openFolder(context));
+            list.addView(folder);
         }
         ZaloUi.trimGroupDividers(list);
         page.show();

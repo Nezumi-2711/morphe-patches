@@ -23,6 +23,7 @@ public final class NezumiPrefs {
     public static final String KEEP_RECALLED_MESSAGES = "keep_recalled_messages";
     public static final String HIDE_ONLINE_STATUS = "hide_online_status";
     public static final String HIDE_DISCOVERY = "hide_discovery";
+    public static final String CALL_RECORDING = "call_recording_button";
     static final String SAVED_ONLINE_SHARING = "saved_online_sharing";
 
     public static SharedPreferences of(Context context) {
