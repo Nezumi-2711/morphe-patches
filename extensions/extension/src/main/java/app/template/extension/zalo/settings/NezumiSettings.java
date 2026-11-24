@@ -25,6 +25,10 @@ public final class NezumiSettings {
         NezumiSettingsPage.attach(root, anchor, NezumiSettingsPage.FEATURE_DELIVERY_RECEIPTS);
     }
 
+    public static void attachConversationProtection(View root, View anchor) {
+        NezumiSettingsPage.attach(root, anchor, NezumiSettingsPage.FEATURE_CONVERSATION_PROTECTION);
+    }
+
     public static void attachMediaBox(View root, View anchor) {
         NezumiSettingsPage.attach(root, anchor, NezumiSettingsPage.FEATURE_MEDIA_BOX);
     }

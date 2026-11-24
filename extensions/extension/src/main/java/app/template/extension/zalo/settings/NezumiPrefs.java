@@ -12,6 +12,7 @@ public final class NezumiPrefs {
     public static final String HIDE_TYPING = "hide_text_typing";
     public static final String HIDE_READ_RECEIPTS = "hide_read_receipts";
     public static final String HIDE_DELIVERY_RECEIPTS = "hide_delivery_receipts";
+    public static final String BYPASS_CONVERSATION_PROTECTION = "bypass_conversation_protection";
     public static final String HIDE_MEDIA_BOX = "hide_media_box";
     public static final String HIDE_BUSINESS_BOX = "hide_business_box";
     public static final String HIDE_OA_MESSAGES = "hide_oa_messages";

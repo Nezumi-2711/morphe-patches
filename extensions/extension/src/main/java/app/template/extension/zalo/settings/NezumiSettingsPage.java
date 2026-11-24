@@ -54,6 +54,8 @@ public final class NezumiSettingsPage {
 
     static final int FEATURE_CALL_RECORDING = 1 << 14;
 
+    static final int FEATURE_CONVERSATION_PROTECTION = 1 << 15;
+
     static void attach(View root, View anchor, int feature) {
         if (root == null || anchor == null || !(anchor.getParent() instanceof ViewGroup)) return;
         ViewGroup parent = (ViewGroup) anchor.getParent();
@@ -96,11 +98,12 @@ public final class NezumiSettingsPage {
         int features = state.features;
         boolean hasChatFeatures = (features & (FEATURE_ONLINE_STATUS | FEATURE_REACTION |
             FEATURE_TYPING | FEATURE_READ_RECEIPTS | FEATURE_DELIVERY_RECEIPTS |
-            FEATURE_RECALLED_MESSAGES)) != 0;
+            FEATURE_RECALLED_MESSAGES | FEATURE_CONVERSATION_PROTECTION)) != 0;
         String reactionLabel = vietnamese ? "Mở khóa biểu tượng cảm xúc" : "Unlock reaction icons";
         String typingLabel = vietnamese ? "Ẩn trạng thái đang nhập" : "Hide typing status";
         String readLabel = vietnamese ? "Ẩn trạng thái đã xem" : "Hide read receipts";
         String deliveryLabel = vietnamese ? "Ẩn trạng thái đã nhận" : "Hide delivery receipts";
+        String protectionLabel = vietnamese ? "Gỡ giới hạn hội thoại được bảo vệ" : "Bypass conversation protection";
         String mediaBoxLabel = vietnamese ? "Ẩn Media Box" : "Hide Media Box";
         String businessBoxLabel = vietnamese ? "Ẩn Business Box" : "Hide Business Box";
         String oaMessagesLabel = vietnamese ? "Ẩn tài khoản OA" : "Hide OA accounts";
@@ -163,6 +166,10 @@ public final class NezumiSettingsPage {
         if ((features & FEATURE_DELIVERY_RECEIPTS) != 0) {
             ZaloUi.toggleRow(list, context, deliveryLabel, "check_circle", prefs.getBoolean(NezumiPrefs.HIDE_DELIVERY_RECEIPTS, false),
                 darkMode, (button, checked) -> prefs.edit().putBoolean(NezumiPrefs.HIDE_DELIVERY_RECEIPTS, checked).apply());
+        }
+        if ((features & FEATURE_CONVERSATION_PROTECTION) != 0) {
+            ZaloUi.toggleRow(list, context, protectionLabel, "shield", prefs.getBoolean(NezumiPrefs.BYPASS_CONVERSATION_PROTECTION, true), darkMode,
+                (button, checked) -> prefs.edit().putBoolean(NezumiPrefs.BYPASS_CONVERSATION_PROTECTION, checked).apply());
         }
         if ((features & FEATURE_RECALLED_MESSAGES) != 0) {
             ZaloUi.toggleRow(list, context, recalledMessagesLabel, "recall",
