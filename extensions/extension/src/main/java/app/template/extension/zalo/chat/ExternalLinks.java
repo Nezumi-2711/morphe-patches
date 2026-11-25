@@ -6,6 +6,7 @@ import android.view.View;
 import java.lang.reflect.Method;
 import java.util.Locale;
 
+import app.template.extension.zalo.buglog.NezumiLog;
 import app.template.extension.zalo.shared.ZaloEnv;
 
 /**
@@ -38,7 +39,8 @@ public final class ExternalLinks {
     public static boolean isBrowserMode() {
         try {
             return jumpLinkMode(JUMP_LINK_MODE_KEY, MODE_ZALO) == MODE_BROWSER;
-        } catch (Throwable ignored) {
+        } catch (Throwable failure) {
+            NezumiLog.swallowedOnce("NezumiLinks", "jump link mode unavailable", failure);
             return false;
         }
     }
@@ -67,7 +69,8 @@ public final class ExternalLinks {
             if (activity == null) return false;
             openInBrowser(activity, trimmed);
             return true;
-        } catch (Throwable ignored) {
+        } catch (Throwable failure) {
+            NezumiLog.swallowedOnce("NezumiLinks", "opening link externally failed, using Zalo", failure);
             return false;
         }
     }
@@ -115,7 +118,8 @@ public final class ExternalLinks {
             Method getContext = host.getClass().getMethod("getContext");
             Object context = getContext.invoke(host);
             return context instanceof Context ? (Context) context : null;
-        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
+            NezumiLog.swallowedOnce("NezumiLinks", "host context unavailable", failure);
             return null;
         }
     }
