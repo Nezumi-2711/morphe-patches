@@ -5,6 +5,9 @@ import android.app.Notification;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.RelativeSizeSpan;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -59,6 +62,8 @@ public final class NezumiSettingsPage {
     static final int FEATURE_CONVERSATION_PROTECTION = 1 << 15;
 
     static final int FEATURE_BUG_LOG = 1 << 16;
+
+    static final int FEATURE_CALL_BACKGROUND = 1 << 17;
 
     static void attach(View root, View anchor, int feature) {
         if (root == null || anchor == null || !(anchor.getParent() instanceof ViewGroup)) return;
@@ -250,8 +255,10 @@ public final class NezumiSettingsPage {
             addSoundRows(list, context, CustomSounds.RINGTONE, "call",
                 vietnamese ? "Nhạc chuông cuộc gọi" : "Incoming-call ringtone", darkMode, vietnamese);
         }
-        if ((features & FEATURE_CALL_RECORDING) != 0) {
+        if ((features & (FEATURE_CALL_RECORDING | FEATURE_CALL_BACKGROUND)) != 0) {
             ZaloUi.addGroup(list, context, vietnamese ? "Cuộc gọi" : "Calls", darkMode);
+        }
+        if ((features & FEATURE_CALL_RECORDING) != 0) {
             ZaloUi.toggleRow(list, context, vietnamese ? "Hiện nút ghi âm" : "Show record button", "call",
                 prefs.getBoolean(NezumiPrefs.CALL_RECORDING, true), darkMode,
                 (button, checked) -> prefs.edit().putBoolean(NezumiPrefs.CALL_RECORDING, checked).apply());
@@ -259,6 +266,14 @@ public final class NezumiSettingsPage {
                 ZaloUi.zdsIcon(context, "grid_view", darkMode), true, darkMode, null);
             folder.setOnClickListener(view -> CallRecorder.openFolder(context));
             list.addView(folder);
+        }
+        if ((features & FEATURE_CALL_BACKGROUND) != 0) {
+            String callBackgroundLabel = vietnamese ? "Nền đen cho màn hình cuộc gọi" : "True-black call screen";
+            String callBackgroundNote = vietnamese ? "Chỉ áp dụng khi dùng giao diện tối" : "Dark theme only";
+            View callBackground = ZaloUi.toggleRow(list, context, callBackgroundLabel, "call",
+                prefs.getBoolean(NezumiPrefs.TRUE_BLACK_CALL_SCREEN, false), darkMode,
+                (button, checked) -> prefs.edit().putBoolean(NezumiPrefs.TRUE_BLACK_CALL_SCREEN, checked).apply());
+            addRowNote(ZaloUi.rowTitle(callBackground), callBackgroundLabel, callBackgroundNote);
         }
         if ((features & FEATURE_BUG_LOG) != 0 && NezumiLog.isAvailable()) {
             addBugLogRows(list, context, darkMode, vietnamese);
@@ -299,6 +314,15 @@ public final class NezumiSettingsPage {
             Toast.makeText(context, vietnamese ? "Đã xóa log" : "Log cleared", Toast.LENGTH_SHORT).show();
         });
         list.addView(clear);
+    }
+
+    /** Shows {@code note} as a smaller second line under a row title. */
+    private static void addRowNote(TextView title, String label, String note) {
+        SpannableString text = new SpannableString(label + "\n" + note);
+        text.setSpan(new RelativeSizeSpan(0.8f), label.length() + 1, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        title.setSingleLine(false);
+        title.setMaxLines(2);
+        title.setText(text);
     }
 
     private static String formatSize(long bytes) {

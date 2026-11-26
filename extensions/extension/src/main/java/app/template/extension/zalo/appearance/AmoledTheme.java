@@ -7,12 +7,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import app.template.extension.zalo.settings.NezumiPrefs;
+
 /**
  * Remaps server-driven Zinstant background colors (Me tab and other Zinstant
  * screens) to the AMOLED palette. Zinstant layouts carry their own dark palette,
  * so the resource-level AMOLED patch does not reach them.
  *
- * Also dims the bright blue call screen background in dark mode.
+ * Also dims the bright blue call screen background in dark mode, or blacks it out
+ * entirely when the "True-black call screen" Nezumi option is on.
  */
 @SuppressWarnings("unused")
 public final class AmoledTheme {
@@ -25,6 +28,9 @@ public final class AmoledTheme {
 
     /** 60% black scrim drawn over the call background (#0068FF becomes #002A66). */
     private static final int CALL_SCRIM = 0x99000000;
+
+    /** Opaque scrim used when the true-black call screen option is enabled. */
+    private static final int CALL_SCRIM_TRUE_BLACK = BLACK;
 
     /** Called with every Zinstant background color before it is stored. */
     public static int zinstantBackground(int color) {
@@ -39,7 +45,8 @@ public final class AmoledTheme {
     /**
      * Inserts a full-screen, non-interactive scrim right above {@code background}
      * (or at the bottom when it is null / not a child). Later children such as
-     * video and call controls are appended above it.
+     * video and call controls are appended above it. The scrim is 60% black by
+     * default and fully opaque when {@link NezumiPrefs#TRUE_BLACK_CALL_SCREEN} is on.
      */
     public static void dimCallBackground(ViewGroup root, View background) {
         try {
@@ -47,7 +54,8 @@ public final class AmoledTheme {
             if (!isZaloDarkTheme(context)) return;
 
             View scrim = new View(context);
-            scrim.setBackgroundColor(CALL_SCRIM);
+            boolean trueBlack = NezumiPrefs.bool(context, NezumiPrefs.TRUE_BLACK_CALL_SCREEN, false);
+            scrim.setBackgroundColor(trueBlack ? CALL_SCRIM_TRUE_BLACK : CALL_SCRIM);
             scrim.setClickable(false);
             scrim.setFocusable(false);
             scrim.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);

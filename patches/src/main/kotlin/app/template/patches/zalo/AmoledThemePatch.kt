@@ -194,7 +194,7 @@ private object GroupCallOnCreateFingerprint : Fingerprint(
 @Suppress("unused")
 val amoledThemePatch = bytecodePatch(
     name = "AMOLED dark theme",
-    description = "Use true-black backgrounds in Zalo's dark mode, with slightly lifted popups, sheets and chat bubbles, and a dimmed call screen.",
+    description = "Use true-black backgrounds in Zalo's dark mode, with slightly lifted popups, sheets and chat bubbles, and a dimmed call screen that can be made true black in Nezumi's Settings.",
     default = false,
 ) {
     compatibleWith(amoledCompatibility)
@@ -248,5 +248,7 @@ val amoledThemePatch = bytecodePatch(
             it.method.addInstruction(setBackground.index + 1,
                 "invoke-static {v$root}, $AMOLED_THEME->dimCallBackground(Landroid/view/ViewGroup;)V")
         }
+
+        attachNezumiSettings("attachCallBackground")
     }
 }
