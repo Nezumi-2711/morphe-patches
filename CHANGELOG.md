@@ -1,3 +1,10 @@
+## [1.8.0-dev.4](https://github.com/Nezumi-2711/morphe-patches/compare/v1.8.0-dev.3...v1.8.0-dev.4) (2026-11-26)
+
+### ✨ New Features
+
+* **zalo:** add Mark as read action to notifications ([b15822e](https://github.com/Nezumi-2711/morphe-patches/commit/b15822e9d28a02a78b75cb81d8df3550e800bb82)), closes [#47](https://github.com/Nezumi-2711/morphe-patches/issues/47)
+* **zalo:** add true-black call screen toggle ([6c31b10](https://github.com/Nezumi-2711/morphe-patches/commit/6c31b10ed79a33bf710c1c400a1a572e494ae0c1)), closes [#51](https://github.com/Nezumi-2711/morphe-patches/issues/51)
+
 ## [1.8.0-dev.3](https://github.com/Nezumi-2711/morphe-patches/compare/v1.8.0-dev.2...v1.8.0-dev.3) (2026-11-26)
 
 ### 🐛 Bug Fixes
