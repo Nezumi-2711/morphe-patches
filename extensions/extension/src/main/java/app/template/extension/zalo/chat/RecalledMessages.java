@@ -28,14 +28,60 @@ public final class RecalledMessages {
     private static Set<String> recalledMessages = new HashSet<>();
 
     public static boolean shouldKeepIncomingRecall(String senderId, int eventType) {
-        boolean enabled = isRecalledMessagesKept(ZaloEnv.appContext());
+        Context context = ZaloEnv.appContext();
+        boolean enabled = isRecalledMessagesKept(context);
         String account = ZaloEnv.currentAccount();
         boolean incoming = account != null && !account.isEmpty()
             && senderId != null && !senderId.isEmpty() && !account.equals(senderId);
         boolean keep = enabled && incoming;
-        NezumiLog.i("NezumiRecall", "event=" + eventType + " enabled=" + enabled
-            + " incoming=" + incoming + " kept=" + keep);
+        String reason = keep ? "keep"
+            : context == null ? "no-app-context"
+            : !enabled ? "setting-off"
+            : account == null || account.isEmpty() ? "no-current-account"
+            : senderId == null || senderId.isEmpty() ? "no-sender"
+            : "own-message";
+        NezumiLog.i("NezumiRecall", "event=" + eventName(eventType) + " enabled=" + enabled
+            + " incoming=" + incoming + " kept=" + keep + " reason=" + reason);
         return keep;
+    }
+
+    private static String eventName(int eventType) {
+        return eventType == 0 ? "undo" : eventType == 1 ? "delete-control" : String.valueOf(eventType);
+    }
+
+    /**
+     * Hooked at the start of the delete-control batch handler ({@code SpecialMessageProcessor.b}).
+     * With {@code deferred=true} (socket packets of some batch commands), the app queues the deletes
+     * in its pending map instead of calling the per-target handler the keep patch hooks, so those
+     * deletes are NOT kept. Log only; behaviour is unchanged.
+     */
+    public static void traceDeleteBatch(Object message, boolean deferred) {
+        try {
+            if (message == null) return;
+            String sender = null;
+            int targets = -1;
+            try {
+                sender = (String) message.getClass().getField("c").get(message);
+                Object payload = message.getClass().getField("I1").get(message);
+                if (payload != null) {
+                    Object list = payload.getClass().getField("e").get(payload);
+                    if (list instanceof java.util.Collection) targets = ((java.util.Collection<?>) list).size();
+                }
+            } catch (ReflectiveOperationException | RuntimeException failure) {
+                NezumiLog.swallowedOnce("NezumiRecall", "delete batch fields unavailable", failure);
+            }
+            String account = ZaloEnv.currentAccount();
+            boolean incoming = account != null && !account.isEmpty()
+                && sender != null && !sender.isEmpty() && !account.equals(sender);
+            String line = "delete-control batch deferred=" + deferred + " incoming=" + incoming + " targets=" + targets;
+            if (deferred && incoming && isRecalledMessagesKept(ZaloEnv.appContext())) {
+                NezumiLog.w("NezumiRecall", line + " -> queued by app, bypasses keep");
+            } else {
+                NezumiLog.i("NezumiRecall", line);
+            }
+        } catch (Throwable failure) {
+            NezumiLog.swallowedOnce("NezumiRecall", "delete batch trace failed", failure);
+        }
     }
 
     private static String recallDigest(String value) {
@@ -82,26 +128,43 @@ public final class RecalledMessages {
 
     public static void markIncomingRecall(Object messageId) {
         Context context = ZaloEnv.appContext();
+        if (messageId == null) {
+            NezumiLog.w("NezumiRecall", "mark skipped: no target id");
+            return;
+        }
         Set<String> keys = recallKeys(messageId);
-        if (context == null || keys.isEmpty()) return;
+        if (context == null || keys.isEmpty()) {
+            NezumiLog.w("NezumiRecall", "mark skipped: " + (context == null ? "no app context" : "no usable target keys"));
+            return;
+        }
         ArrayList<View> rows;
+        int stored;
         synchronized (RECALL_LOCK) {
             String accountKey = loadRecallAccount(context);
-            if (accountKey == null || !recalledMessages.addAll(keys)) return;
+            if (accountKey == null) {
+                NezumiLog.w("NezumiRecall", "mark skipped: no current account");
+                return;
+            }
+            if (!recalledMessages.addAll(keys)) {
+                NezumiLog.i("NezumiRecall", "target already marked");
+                return;
+            }
             NezumiPrefs.of(context).edit()
                 .putStringSet(accountKey, new HashSet<>(recalledMessages)).apply();
             rows = new ArrayList<>(RECALL_ROWS.keySet());
+            stored = recalledMessages.size();
         }
         for (View row : rows) {
             row.post(() -> refreshRecallRow(row));
         }
-        NezumiLog.i("NezumiRecall", "target marked");
+        NezumiLog.i("NezumiRecall", "target marked keys=" + keys.size() + " stored=" + stored
+            + " visibleRows=" + rows.size());
     }
 
     public static boolean isIncomingRecall(Object message) {
         Context context = ZaloEnv.appContext();
         if (context == null || message == null) {
-            NezumiLog.i("NezumiRecall", "lookup miss no-context-or-message");
+            NezumiLog.d("NezumiRecall", "lookup miss no-context-or-message");
             return false;
         }
         try {
@@ -129,7 +192,7 @@ public final class RecalledMessages {
 
     public static String formatRecallTime(View row, String original) {
         if (!hasRecallLabel(row)) {
-            NezumiLog.i("NezumiRecall", "footer miss");
+            NezumiLog.d("NezumiRecall", "footer miss");
             return original;
         }
         NezumiLog.i("NezumiRecall", "footer hit");
@@ -142,11 +205,12 @@ public final class RecalledMessages {
         synchronized (RECALL_LOCK) {
             RECALL_ROWS.put(row, Boolean.TRUE);
         }
-        NezumiLog.i("NezumiRecall", "row tracked");
+        NezumiLog.d("NezumiRecall", "row tracked");
     }
 
     private static void refreshRecallRow(View row) {
         if (!row.isAttachedToWindow() || !hasRecallLabel(row)) return;
+        NezumiLog.i("NezumiRecall", "row refresh");
         try {
             Class<?> base = Class.forName("com.zing.zalo.ui.chat.chatrow.ChatRow");
             Object message = base.getMethod("getMessage").invoke(row);

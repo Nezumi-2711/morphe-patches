@@ -178,7 +178,10 @@ public final class NezumiSettingsPage {
         if ((features & FEATURE_RECALLED_MESSAGES) != 0) {
             ZaloUi.toggleRow(list, context, recalledMessagesLabel, "recall",
                 prefs.getBoolean(NezumiPrefs.KEEP_RECALLED_MESSAGES, false), darkMode,
-                (button, checked) -> prefs.edit().putBoolean(NezumiPrefs.KEEP_RECALLED_MESSAGES, checked).apply());
+                (button, checked) -> {
+                prefs.edit().putBoolean(NezumiPrefs.KEEP_RECALLED_MESSAGES, checked).apply();
+                NezumiLog.i("NezumiRecall", "setting keep_recalled_messages=" + checked);
+            });
         }
         if ((features & FEATURE_DISCOVERY) != 0) {
             ZaloUi.addGroup(list, context, vietnamese ? "Điều hướng" : "Navigation", darkMode);

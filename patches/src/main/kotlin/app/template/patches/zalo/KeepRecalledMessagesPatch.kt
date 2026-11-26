@@ -96,6 +96,17 @@ val keepRecalledMessagesPatch = bytecodePatch(
             """.trimIndent(), ExternalLabel("nezumi_original_recall", originalStart))
         }
 
+        // Diagnostics only: SpecialMessageProcessor.b(vv3, Z) with Z=true (socket batch commands)
+        // queues delete-control targets in the app's pending map without calling d(), so those
+        // deletes skip the hook above. Log each batch so bug logs show when that path is taken.
+        // b has 20 registers, so p1/p2 are v18/v19: needs the /range form.
+        val deleteBatch = mutableClassDefBy(undo.definingClass).methods.single {
+            it.name == "b" && it.parameterTypes == listOf(message, "Z") && it.returnType == "V"
+        }
+        deleteBatch.addInstructions(0, """
+            invoke-static/range {p1 .. p2}, $RECALLED_MESSAGES->traceDeleteBatch(Ljava/lang/Object;Z)V
+        """.trimIndent())
+
         val row = mutableClassDefBy("Lcom/zing/zalo/ui/chat/chatrow/ChatRow;")
         val timeText = row.methods.single {
             it.name == "getCurrentTimeText" && it.parameterTypes.isEmpty() &&
