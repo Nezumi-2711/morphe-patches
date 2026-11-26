@@ -24,7 +24,7 @@ still require device validation; local APK checks alone do not verify them.
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.8.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.8.0-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;26 patches total
+> **[v1.8.0-dev.3](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.8.0-dev.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;26 patches total
 <details open>
 <summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;26 patches</summary>
 <br>
@@ -58,7 +58,7 @@ still require device validation; local APK checks alone do not verify them.
 | [Keep recalled messages](#keep-recalled-messages) | Keep received messages and locally available photos after another user recalls them, when enabled in Nezumi Settings. |  |
 | [Native signature fix](#native-signature-fix) | Allow Zalo 26.11.01 ARM64 to start after patching and re-signing. ARMv7 is not supported. |  |
 | [Open links in external browser](#open-links-in-external-browser) | Applies Zalo's "Mở bằng trình duyệt web" choice (Settings > Privacy > Chọn cách mở link) to all links, including link-preview video cards, feed and comment links, group board/My Cloud links and scanned QR links. Zalo's own links (zalo.me) still open in Zalo. You must select "Mở bằng trình duyệt web" in that setting; with the default "Mở bằng Zalo" nothing changes. |  |
-| [Save media](#save-media) | Adds Save to Gallery for profile avatar, profile cover, Story and Zalo Video. |  |
+| [Save media](#save-media) | Adds Save to Gallery for profile avatar, profile cover, Story, Zalo Video, feed videos, and post videos and photos. |  |
 | [Send photos in original quality](#send-photos-in-original-quality) | Unlocks Zalo's native original-photo quality option and selects it by default while preserving its normal quality picker. |  |
 | [Unlimited quick messages](#unlimited-quick-messages) | Remove the client-side limit on the number of quick messages, ignoring the server-provided cap. |  |
 | [View online status privately](#view-online-status-privately) | Hide your activity and show confirmed current-online status in the individual chat header when available. |  |

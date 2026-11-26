@@ -1,3 +1,14 @@
+## [1.8.0-dev.3](https://github.com/Nezumi-2711/morphe-patches/compare/v1.8.0-dev.2...v1.8.0-dev.3) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **zalo:** log root cause of Drive token refresh failures ([67b4321](https://github.com/Nezumi-2711/morphe-patches/commit/67b43214deb6c3997031ad2253530644175844b6))
+* **zalo:** log why recalled messages are not kept ([7504ce1](https://github.com/Nezumi-2711/morphe-patches/commit/7504ce1d640b26a011822f575eef36fc352d14d5))
+
+### ✨ New Features
+
+* **zalo:** save feed, post and Zalo Video media ([bdd6bdc](https://github.com/Nezumi-2711/morphe-patches/commit/bdd6bdcd85ded373bad79d610940add9eb6c19b4)), closes [#46](https://github.com/Nezumi-2711/morphe-patches/issues/46)
+
 ## [1.8.0-dev.2](https://github.com/Nezumi-2711/morphe-patches/compare/v1.8.0-dev.1...v1.8.0-dev.2) (2026-11-25)
 
 ### ✨ New Features
