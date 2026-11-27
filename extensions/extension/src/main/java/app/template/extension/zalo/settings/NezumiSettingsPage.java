@@ -7,12 +7,14 @@ import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.text.SpannableString;
 import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.util.Map;
 
 import app.template.extension.zalo.appearance.CustomFont;
 import app.template.extension.zalo.buglog.BugLogExport;
@@ -125,12 +127,23 @@ public final class NezumiSettingsPage {
         String discoveryLabel = vietnamese ? "Ẩn tab Khám phá" : "Hide Discovery tab";
         String messageAdsLabel = vietnamese ? "Ẩn quảng cáo trong Messages" : "Hide ads in Messages";
         SharedPreferences prefs = NezumiPrefs.of(context);
+        if ((features & FEATURE_CUSTOM_FONT) != 0) CustomFont.trackForRestart(context);
+        Map<String, Object> restartSnapshot = RestartPrompt.snapshot();
         Dialog page = ZaloUi.page(context, "Nezumi's Settings", darkMode);
         boolean[] discoveryChanged = { false };
         page.setOnDismissListener(dialog -> {
-            if (discoveryChanged[0]) DiscoveryTab.recreateAfterChange(context);
+            Runnable rebuildTabs = () -> {
+                if (discoveryChanged[0]) DiscoveryTab.recreateAfterChange(context);
+            };
+            if (RestartPrompt.changedSince(restartSnapshot)) RestartPrompt.ask(context, darkMode, rebuildTabs);
+            else rebuildTabs.run();
         });
         LinearLayout list = page.findViewById(android.R.id.content).findViewWithTag("nezumi-list");
+        if (RestartPrompt.anyPending()) {
+            list.addView(ZaloUi.banner(context,
+                vietnamese ? "Một số thay đổi cần khởi động lại Zalo để áp dụng." : "Some changes need a Zalo restart to apply.",
+                vietnamese ? "Khởi động lại" : "Restart", darkMode, () -> RestartPrompt.restart(context)));
+        }
         if (hasChatFeatures) ZaloUi.addGroup(list, context, vietnamese ? "Trò chuyện" : "Chat", darkMode);
         if ((features & FEATURE_ONLINE_STATUS) != 0) {
             View onlineItem = ZaloUi.toggleRow(list, context, onlineLabel, "user_status",
@@ -230,8 +243,14 @@ public final class NezumiSettingsPage {
             String fontTitle = vietnamese ? "Phông chữ tùy chọn" : "Custom font";
             View fontItem = ZaloUi.row(context, fontTitle, ZaloUi.zdsIcon(context, "edit_text", darkMode), true, darkMode, null);
             TextView fontLabel = ZaloUi.rowTitle(fontItem);
-            Runnable updateFontLabel = () -> fontLabel.setText(fontTitle + (CustomFont.isSelected(context)
-                ? (vietnamese ? " (đã chọn)" : " (selected)") : ""));
+            Runnable updateFontLabel = () -> {
+                String label = fontTitle + (CustomFont.isSelected(context) ? (vietnamese ? " (đã chọn)" : " (selected)") : "");
+                boolean pending = RestartPrompt.isPending(CustomFont.FONT);
+                String note = pending ? (vietnamese ? "Đang chờ khởi động lại" : "Waiting for restart")
+                    : (vietnamese ? "Cần khởi động lại để áp dụng" : "Restart required to apply");
+                addRowNote(fontLabel, label, note, pending ? (darkMode ? 0xFF3D8BFF : 0xFF0068FF)
+                    : (darkMode ? 0xFFA3A9B1 : 0xFF6B7280));
+            };
             updateFontLabel.run();
             fontItem.setOnClickListener(view -> {
                 if (!CustomFont.pick(context, updateFontLabel)) {
@@ -245,8 +264,6 @@ public final class NezumiSettingsPage {
             resetFont.setOnClickListener(view -> {
                 CustomFont.reset(context);
                 updateFontLabel.run();
-                Toast.makeText(context, vietnamese ? "Mở lại Zalo để cập nhật phông chữ"
-                    : "Restart Zalo to refresh text", Toast.LENGTH_LONG).show();
             });
             list.addView(resetFont);
         }
@@ -331,8 +348,16 @@ public final class NezumiSettingsPage {
 
     /** Shows {@code note} as a smaller second line under a row title. */
     private static void addRowNote(TextView title, String label, String note) {
+        addRowNote(title, label, note, 0);
+    }
+
+    /** As above, with the note drawn in {@code noteColor} (0 keeps the title colour). */
+    private static void addRowNote(TextView title, String label, String note, int noteColor) {
         SpannableString text = new SpannableString(label + "\n" + note);
         text.setSpan(new RelativeSizeSpan(0.8f), label.length() + 1, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        if (noteColor != 0) {
+            text.setSpan(new ForegroundColorSpan(noteColor), label.length() + 1, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
         title.setSingleLine(false);
         title.setMaxLines(2);
         title.setText(text);

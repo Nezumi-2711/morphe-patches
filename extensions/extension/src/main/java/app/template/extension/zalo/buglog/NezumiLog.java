@@ -309,6 +309,12 @@ public final class NezumiLog {
         current.flush();
     }
 
+    /** Waits for lines already queued for the file to reach the disk. Used before a self-restart. */
+    public static void flushPending() {
+        LogStore current = store;
+        if (current != null) current.flush();
+    }
+
     /** Drops the buffered lines, for "Clear log". */
     static void clearBuffered() {
         RING.drain();

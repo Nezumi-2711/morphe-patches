@@ -10,6 +10,7 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.util.Base64;
 import android.util.TypedValue;
@@ -363,6 +364,109 @@ public final class ZaloUi {
             (window.getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE) & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         return page;
+    }
+
+    /**
+     * Zalo-styled two-button confirmation. Back, a tap outside and the negative button all run
+     * {@code onNegative}; exactly one of the two callbacks runs.
+     */
+    public static Dialog confirm(Context context, boolean darkMode, String title, String message,
+            String negative, String positive, Runnable onNegative, Runnable onPositive) {
+        Dialog dialog = new Dialog(context);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        boolean[] decided = { false };
+        LinearLayout box = new LinearLayout(context);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(context, 20), dp(context, 22), dp(context, 20), dp(context, 16));
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(darkMode ? sectionColor(context, true) : 0xFFFFFFFF);
+        background.setCornerRadius(dp(context, 12));
+        box.setBackground(background);
+        TextView heading = label(context, title, darkMode);
+        heading.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+        heading.setTypeface(android.graphics.Typeface.create(heading.getTypeface(), android.graphics.Typeface.BOLD));
+        box.addView(heading, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView body = label(context, message, darkMode);
+        body.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        body.setTextColor(darkMode ? 0xFFA3A9B1 : 0xFF5C6470);
+        body.setLineSpacing(0f, 1.2f);
+        LinearLayout.LayoutParams bodyParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        bodyParams.topMargin = dp(context, 8);
+        bodyParams.bottomMargin = dp(context, 18);
+        box.addView(body, bodyParams);
+        LinearLayout actions = new LinearLayout(context);
+        actions.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        TextView later = pill(context, negative, darkMode ? 0xFF34363A : 0xFFEAEDF0, textColor(context, darkMode), darkMode);
+        TextView now = pill(context, positive, darkMode ? BLUE_DARK : BLUE, 0xFFFFFFFF, darkMode);
+        actions.addView(later);
+        LinearLayout.LayoutParams nowParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        nowParams.leftMargin = dp(context, 8);
+        actions.addView(now, nowParams);
+        box.addView(actions);
+        later.setOnClickListener(view -> dialog.cancel());
+        now.setOnClickListener(view -> {
+            if (decided[0]) return;
+            decided[0] = true;
+            dialog.dismiss();
+            onPositive.run();
+        });
+        dialog.setOnCancelListener(view -> {
+            if (decided[0]) return;
+            decided[0] = true;
+            if (onNegative != null) onNegative.run();
+        });
+        dialog.setContentView(box);
+        Window window = dialog.getWindow();
+        window.setBackgroundDrawable(new ColorDrawable(0x00000000));
+        dialog.show();
+        int width = Math.min(context.getResources().getDisplayMetrics().widthPixels - dp(context, 48), dp(context, 320));
+        window.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
+        return dialog;
+    }
+
+    /** A tinted strip with an info icon, a message and one action button, for the top of a page. */
+    public static View banner(Context context, String message, String action, boolean darkMode, Runnable onAction) {
+        LinearLayout strip = new LinearLayout(context);
+        strip.setGravity(Gravity.CENTER_VERTICAL);
+        strip.setPadding(dp(context, 16), dp(context, 12), dp(context, 16), dp(context, 12));
+        strip.setBackgroundColor(darkMode ? 0xFF12253F : 0xFFE8F1FF);
+        Drawable icon = zdsIcon(context, "info_circle", darkMode);
+        if (icon != null) {
+            View leading = new View(context);
+            leading.setBackground(icon);
+            LinearLayout.LayoutParams leadingParams = new LinearLayout.LayoutParams(dp(context, 22), dp(context, 22));
+            leadingParams.rightMargin = dp(context, 12);
+            strip.addView(leading, leadingParams);
+        }
+        TextView text = label(context, message, darkMode);
+        text.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        text.setTextColor(darkMode ? 0xFFBCD6FF : 0xFF0B3D91);
+        strip.addView(text, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        TextView button = pill(context, action, darkMode ? BLUE_DARK : BLUE, 0xFFFFFFFF, darkMode);
+        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        buttonParams.leftMargin = dp(context, 12);
+        strip.addView(button, buttonParams);
+        button.setOnClickListener(view -> onAction.run());
+        return strip;
+    }
+
+    private static TextView pill(Context context, String value, int fill, int textColor, boolean darkMode) {
+        TextView pill = label(context, value, darkMode);
+        pill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        pill.setTextColor(textColor);
+        pill.setGravity(Gravity.CENTER);
+        pill.setSingleLine(true);
+        pill.setPadding(dp(context, 16), dp(context, 9), dp(context, 16), dp(context, 9));
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(fill);
+        background.setCornerRadius(dp(context, 18));
+        pill.setBackground(background);
+        pill.setClickable(true);
+        return pill;
     }
 
     static int attrColor(Context context, String name, int fallback) {
