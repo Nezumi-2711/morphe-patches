@@ -85,12 +85,14 @@ public final class NezumiLog {
     /**
      * Hook breadcrumb, called through {@link Hits} from the start of every hooked Zalo method:
      * logs {@code I/<id>/Hook hook fired} the first time per process, then costs one array check.
+     * The line always goes to the file (at most one per patch per process), even with detailed
+     * logging off, so an export sees hooks that fired in every process, not only the exporting one.
      */
     static void hit(Patch patch) {
         int index = patch.ordinal();
         if (FIRED[index]) return;
         FIRED[index] = true;
-        i(patch, "Hook", "hook fired");
+        i(patch, LogLine.HOOK_TAG, LogLine.HOOK_FIRED);
     }
 
     /** Called by the Bug log patch from {@code MainApplication.attachBaseContext}, in every process. */
@@ -260,7 +262,7 @@ public final class NezumiLog {
             LogStore current = store;
             if (current == null) {
                 EARLY.add(now, level, patch.id, tag, thread, text, trace);
-            } else if (level == 'E' || detailed) {
+            } else if (LogLine.goesToFile(level, tag, detailed)) {
                 current.append(now, render(level, patch.id, tag, thread, text, trace));
             } else {
                 RING.add(now, level, patch.id, tag, thread, text, trace);
@@ -282,7 +284,7 @@ public final class NezumiLog {
     private static void replayEarly(LogStore current) {
         for (RingBuffer.Entry entry : EARLY.drain()) {
             if (off) continue;
-            if (entry.level == 'E' || detailed) current.append(entry.time, render(entry));
+            if (LogLine.goesToFile(entry.level, entry.tag, detailed)) current.append(entry.time, render(entry));
             else RING.add(entry.time, entry.level, entry.patchId, entry.tag, entry.thread, entry.message, entry.detail);
         }
     }

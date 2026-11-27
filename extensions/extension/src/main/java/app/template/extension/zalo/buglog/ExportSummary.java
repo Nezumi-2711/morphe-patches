@@ -87,7 +87,7 @@ final class ExportSummary {
                 }
                 LogLine.Parsed parsed = LogLine.parse(line);
                 if (parsed == null) continue;
-                if (parsed.tag.equals("Hook") && parsed.message.startsWith("hook fired")) {
+                if (parsed.tag.equals(LogLine.HOOK_TAG) && parsed.message.startsWith(LogLine.HOOK_FIRED)) {
                     Session session = latest.get(process);
                     if (session == null) latest.put(process, session = new Session("", ""));
                     session.hooksFired.add(parsed.patchId);
@@ -121,8 +121,8 @@ final class ExportSummary {
         StringBuilder out = new StringBuilder();
         out.append("===== Nezumi bug log summary =====\n");
         out.append("E/W: errors and warnings in all kept logs. hook: the patch's hook ran in the latest session\n");
-        out.append("(\"").append(NOT_SEEN).append("\" is not an error: the feature may simply not have been used,\n");
-        out.append("or detailed logging was off in another process). n/a: the patch has no runtime hook.\n\n");
+        out.append("of any process (\"").append(NOT_SEEN).append("\" is not an error: the feature may simply not have been used).\n");
+        out.append("n/a: the patch has no runtime hook.\n\n");
         out.append(String.format(Locale.US, "%-40s %5s %5s  %-23s  %-8s  %s%n", "patch", "E", "W", "last E/W", "hook", "first error"));
         if (rows.isEmpty()) out.append("(no patches recorded)\n");
         for (String id : rows) {

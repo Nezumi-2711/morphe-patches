@@ -1,8 +1,10 @@
 package app.template.extension.zalo.buglog;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.TimeZone;
 
@@ -58,5 +60,15 @@ public class LogLineTest {
         assertNull(LogLine.parse("\tat a.b.C.d(C.java:1)"));
         assertNull(LogLine.parse("2026-11-27 10:15:30.123 W/NezumiRecall [main] old format without patch id"));
         assertNull(LogLine.parse("===== session 123 start ====="));
+    }
+
+    @Test
+    public void hookHitsGoToTheFileWithDetailedLoggingOff() {
+        assertTrue(LogLine.goesToFile('I', LogLine.HOOK_TAG, false));
+        assertTrue(LogLine.goesToFile('E', "RecalledMessages", false));
+        // Other info/warning lines stay in the in-memory ring unless detailed logging is on.
+        assertFalse(LogLine.goesToFile('I', "RecalledMessages", false));
+        assertFalse(LogLine.goesToFile('W', "RecalledMessages", false));
+        assertTrue(LogLine.goesToFile('W', "RecalledMessages", true));
     }
 }

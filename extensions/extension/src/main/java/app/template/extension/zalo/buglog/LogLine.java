@@ -18,6 +18,18 @@ final class LogLine {
     static final Pattern ENTRY = Pattern.compile(
         "^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) ([DIWE])/([a-z0-9-]+)/(\\S+) \\[([^\\]]*)\\] ?(.*)$");
 
+    /** Tag and message of the hook breadcrumb written by {@code NezumiLog.hit}. */
+    static final String HOOK_TAG = "Hook";
+    static final String HOOK_FIRED = "hook fired";
+
+    /**
+     * Whether a line goes straight to the file rather than the in-memory ring: errors always, hook
+     * breadcrumbs always (one per patch per process), everything else only with detailed logging.
+     */
+    static boolean goesToFile(char level, String tag, boolean detailed) {
+        return level == 'E' || detailed || HOOK_TAG.equals(tag);
+    }
+
     private static final ThreadLocal<SimpleDateFormat> FORMAT =
         ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US));
 

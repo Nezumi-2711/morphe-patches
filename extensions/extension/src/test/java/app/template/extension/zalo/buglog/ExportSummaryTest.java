@@ -130,4 +130,22 @@ public class ExportSummaryTest {
         assertEquals("no-hook", applied.get("clone-package"));
         assertEquals(2, applied.size());
     }
+
+    @Test
+    public void hookFiredInASecondaryProcessCountsAsYes() {
+        String main = header(300, "2026-11-27 11:00:00.000", "keep-recalled-messages [hook]",
+            "mark-as-read-from-notifications [hook]")
+            + line("2026-11-27 11:00:01.000", 'I', "keep-recalled-messages", "Hook", "hook fired");
+        String push = "===== Nezumi bug log =====\n"
+            + header(301, "2026-11-27 11:00:02.000", "keep-recalled-messages [hook]",
+                "mark-as-read-from-notifications [hook]")
+            + line("2026-11-27 11:00:03.000", 'I', "mark-as-read-from-notifications", "Hook", "hook fired");
+        String summary = ExportSummary.build(Arrays.asList(
+            new ExportSummary.LogFile("nezumi.log", main),
+            new ExportSummary.LogFile("nezumi-push.log", push)));
+        assertTrue(row(summary, "keep-recalled-messages").contains(" yes "));
+        assertTrue(row(summary, "mark-as-read-from-notifications").contains(" yes "));
+        // The header shown is still the main process's.
+        assertTrue(summary.substring(summary.indexOf("Latest session:")).contains("session 300 start"));
+    }
 }
