@@ -1,3 +1,18 @@
+## [1.8.0-dev.5](https://github.com/Nezumi-2711/morphe-patches/compare/v1.8.0-dev.4...v1.8.0-dev.5) (2026-11-27)
+
+### 🐛 Bug Fixes
+
+* **zalo:** always record hook hits so the export sees every process ([c12dba0](https://github.com/Nezumi-2711/morphe-patches/commit/c12dba0b5baf95b6f922fcae6753340769174a1a))
+* **zalo:** keep hook branches valid when bug-log breadcrumbs are injected ([3ea64ed](https://github.com/Nezumi-2711/morphe-patches/commit/3ea64ed470177e54335a8443f51f7b37b3abeb18))
+* **zalo:** log previously swallowed exceptions ([dcd4f0f](https://github.com/Nezumi-2711/morphe-patches/commit/dcd4f0f6d9517a090b37fe465d52a615a38896b8))
+* **zalo:** refresh Messages list when hiding Media/Business Box or ads ([32050e7](https://github.com/Nezumi-2711/morphe-patches/commit/32050e7b2d4b979b077c4d109df49666bbc4bfb8))
+
+### ✨ New Features
+
+* **zalo:** always record errors and crashes, add export summary ([00a49ef](https://github.com/Nezumi-2711/morphe-patches/commit/00a49efe7864238c55a137a925d4e0afd861af9e))
+* **zalo:** prompt to restart after changing custom font ([43cd551](https://github.com/Nezumi-2711/morphe-patches/commit/43cd55151c3d60a2922f326721d439c42201478d))
+* **zalo:** record applied patches and hook hits in bug log ([7c9e977](https://github.com/Nezumi-2711/morphe-patches/commit/7c9e9772868722b4efd218014b376486065c9617))
+
 ## [1.8.0-dev.4](https://github.com/Nezumi-2711/morphe-patches/compare/v1.8.0-dev.3...v1.8.0-dev.4) (2026-11-26)
 
 ### ✨ New Features

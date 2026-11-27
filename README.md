@@ -24,7 +24,7 @@ still require device validation; local APK checks alone do not verify them.
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.8.0-dev.4](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.8.0-dev.4)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;27 patches total
+> **[v1.8.0-dev.5](https://github.com/Nezumi-2711/morphe-patches/releases/tag/v1.8.0-dev.5)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;27 patches total
 <details open>
 <summary>📦 Zalo&nbsp;&nbsp;•&nbsp;&nbsp;27 patches</summary>
 <br>
@@ -37,7 +37,7 @@ still require device validation; local APK checks alone do not verify them.
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [AMOLED dark theme](#amoled-dark-theme) | Use true-black backgrounds in Zalo's dark mode, with slightly lifted popups, sheets and chat bubbles, and a dimmed call screen that can be made true black in Nezumi's Settings. |  |
-| [Bug log](#bug-log) | Adds a Debugging section to Nezumi's Settings that records patch errors, crashes and ANRs to a local log the user can export and share with the developer. Recording is off until the user turns it on. |  |
+| [Bug log](#bug-log) | Adds a Debugging section to Nezumi's Settings with a local log the user can export and share with the developer. Errors, crashes and ANRs are always recorded and named by patch; detailed logging and turning the log off completely are options. |  |
 | [Bypass conversation protection](#bypass-conversation-protection) | Unblock screenshots, screen recording, forwarding, copying and saving media in protected conversations when enabled in Nezumi Settings. |  |
 | [Call recording](#call-recording) | Adds a record button to the Zalo 1-1 in-call screen. Recordings are saved as m4a in Music/ZaloRecordings. |  |
 | [Chat heads instead of Android bubbles](#chat-heads-instead-of-android-bubbles) | Use Zalo's overlay chat heads rather than native Android bubbles on Android 11 and newer. |  |
