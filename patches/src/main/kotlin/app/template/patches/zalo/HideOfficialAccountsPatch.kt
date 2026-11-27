@@ -2,6 +2,7 @@ package app.template.patches.zalo
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.literal
 import app.morphe.patcher.methodCall
@@ -10,6 +11,7 @@ import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
@@ -22,6 +24,18 @@ private object MessagesListFingerprint : Fingerprint(
         string("LatestMention"),
         methodCall(definingClass = "Ljava/util/ArrayList;", name = "add"),
         literal(45),
+    ),
+)
+
+// Chat-notification entry (q44.f(ContactProfile, vv3, Z, Z)V). Runs before the canEnterNotificationFlow
+// gate, whose server forceNotify check returns true ahead of the native mute test.
+private object ChatNotificationEntryFingerprint : Fingerprint(
+    returnType = "V",
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
+    parameters = listOf("Lcom/zing/zalo/control/ContactProfile;", "L", "Z", "Z"),
+    filters = listOf(
+        string("checkShowNotificationInternal ignore noti: "),
+        string("Skip noti for msg ("),
     ),
 )
 
@@ -56,7 +70,22 @@ val hideOfficialAccountsPatch = bytecodePatch(
                 "invoke-static {v$register}, $OFFICIAL_ACCOUNTS->filterOfficialAccounts(Ljava/util/List;)Ljava/util/List;")
             method.addInstructions(index + 1, "move-result-object v$register\nreturn-object v$register")
         }
-        registerHooks(PatchId.HIDE_OA_ACCOUNTS_IN_MESSAGES, method)
+
+        check(ChatNotificationEntryFingerprint.matchAll(1..1).size == 1)
+        val notification = ChatNotificationEntryFingerprint.method
+        val notificationImpl = notification.implementation!!
+        // Five parameter registers (this, profile, message, Z, Z) sit above v0, which is free at entry
+        // (the first instruction overwrites it).
+        check(notificationImpl.registerCount >= 6)
+        val originalStart = notificationImpl.instructions.first()
+        notification.addInstructionsWithLabels(0, """
+            invoke-static {p1, p2}, $OFFICIAL_ACCOUNTS->shouldSuppressNotification(Ljava/lang/Object;Ljava/lang/Object;)Z
+            move-result v0
+            if-eqz v0, :nezumi_original_notification
+            return-void
+        """.trimIndent(), ExternalLabel("nezumi_original_notification", originalStart))
+
+        registerHooks(PatchId.HIDE_OA_ACCOUNTS_IN_MESSAGES, method, notification)
         attachNezumiSettings("attachOAMessages")
     }
 }
