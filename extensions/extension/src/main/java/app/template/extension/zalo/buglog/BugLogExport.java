@@ -34,7 +34,7 @@ import java.util.Locale;
 public final class BugLogExport {
     private BugLogExport() { }
 
-    private static final String TAG = "BugLog";
+    private static final String TAG = "BugLogExport";
     private static final String FOLDER = "Nezumi";
 
     public interface Callback {
@@ -59,7 +59,7 @@ public final class BugLogExport {
                 file.delete();
             }
         }
-        NezumiLog.i(TAG, "log cleared");
+        NezumiLog.i(Patch.CORE, TAG, "log cleared");
     }
 
     public static void export(Context context, Callback callback) {
@@ -72,7 +72,7 @@ public final class BugLogExport {
                 String stamp = new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(new Date());
                 path = save(context, "nezumi-log-" + stamp + ".txt");
             } catch (IOException | RuntimeException failure) {
-                NezumiLog.e(TAG, "export failed", failure);
+                NezumiLog.e(Patch.CORE, TAG, "export failed", failure);
             }
             String saved = path;
             main.post(() -> callback.done(saved));

@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.settings.NezumiPrefs;
 import app.template.extension.zalo.shared.ZaloEnv;
 
@@ -28,9 +29,9 @@ public final class RecalledMessages {
     private static Set<String> recalledMessages = new HashSet<>();
 
     public static boolean shouldKeepIncomingRecall(String senderId, int eventType) {
-        Context context = ZaloEnv.appContext();
+        Context context = ZaloEnv.appContext(Patch.KEEP_RECALLED_MESSAGES);
         boolean enabled = isRecalledMessagesKept(context);
-        String account = ZaloEnv.currentAccount();
+        String account = ZaloEnv.currentAccount(Patch.KEEP_RECALLED_MESSAGES);
         boolean incoming = account != null && !account.isEmpty()
             && senderId != null && !senderId.isEmpty() && !account.equals(senderId);
         boolean keep = enabled && incoming;
@@ -40,7 +41,7 @@ public final class RecalledMessages {
             : account == null || account.isEmpty() ? "no-current-account"
             : senderId == null || senderId.isEmpty() ? "no-sender"
             : "own-message";
-        NezumiLog.i("NezumiRecall", "event=" + eventName(eventType) + " enabled=" + enabled
+        NezumiLog.i(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "event=" + eventName(eventType) + " enabled=" + enabled
             + " incoming=" + incoming + " kept=" + keep + " reason=" + reason);
         return keep;
     }
@@ -68,19 +69,19 @@ public final class RecalledMessages {
                     if (list instanceof java.util.Collection) targets = ((java.util.Collection<?>) list).size();
                 }
             } catch (ReflectiveOperationException | RuntimeException failure) {
-                NezumiLog.swallowedOnce("NezumiRecall", "delete batch fields unavailable", failure);
+                NezumiLog.swallowedOnce(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "delete batch fields unavailable", failure);
             }
-            String account = ZaloEnv.currentAccount();
+            String account = ZaloEnv.currentAccount(Patch.KEEP_RECALLED_MESSAGES);
             boolean incoming = account != null && !account.isEmpty()
                 && sender != null && !sender.isEmpty() && !account.equals(sender);
             String line = "delete-control batch deferred=" + deferred + " incoming=" + incoming + " targets=" + targets;
-            if (deferred && incoming && isRecalledMessagesKept(ZaloEnv.appContext())) {
-                NezumiLog.w("NezumiRecall", line + " -> queued by app, bypasses keep");
+            if (deferred && incoming && isRecalledMessagesKept(ZaloEnv.appContext(Patch.KEEP_RECALLED_MESSAGES))) {
+                NezumiLog.w(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", line + " -> queued by app, bypasses keep");
             } else {
-                NezumiLog.i("NezumiRecall", line);
+                NezumiLog.i(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", line);
             }
         } catch (Throwable failure) {
-            NezumiLog.swallowedOnce("NezumiRecall", "delete batch trace failed", failure);
+            NezumiLog.swallowedOnce(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "delete batch trace failed", failure);
         }
     }
 
@@ -109,13 +110,13 @@ public final class RecalledMessages {
             }
             return keys;
         } catch (ReflectiveOperationException | RuntimeException failure) {
-            NezumiLog.swallowedOnce("NezumiRecall", "recall keys unavailable", failure);
+            NezumiLog.swallowedOnce(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "recall keys unavailable", failure);
             return keys;
         }
     }
 
     private static String loadRecallAccount(Context context) {
-        String account = ZaloEnv.currentAccount();
+        String account = ZaloEnv.currentAccount(Patch.KEEP_RECALLED_MESSAGES);
         if (account == null || account.isEmpty()) return null;
         String key = "recalled_ids_" + recallDigest(account);
         if (!key.equals(recallAccount)) {
@@ -127,14 +128,14 @@ public final class RecalledMessages {
     }
 
     public static void markIncomingRecall(Object messageId) {
-        Context context = ZaloEnv.appContext();
+        Context context = ZaloEnv.appContext(Patch.KEEP_RECALLED_MESSAGES);
         if (messageId == null) {
-            NezumiLog.w("NezumiRecall", "mark skipped: no target id");
+            NezumiLog.w(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "mark skipped: no target id");
             return;
         }
         Set<String> keys = recallKeys(messageId);
         if (context == null || keys.isEmpty()) {
-            NezumiLog.w("NezumiRecall", "mark skipped: " + (context == null ? "no app context" : "no usable target keys"));
+            NezumiLog.w(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "mark skipped: " + (context == null ? "no app context" : "no usable target keys"));
             return;
         }
         ArrayList<View> rows;
@@ -142,11 +143,11 @@ public final class RecalledMessages {
         synchronized (RECALL_LOCK) {
             String accountKey = loadRecallAccount(context);
             if (accountKey == null) {
-                NezumiLog.w("NezumiRecall", "mark skipped: no current account");
+                NezumiLog.w(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "mark skipped: no current account");
                 return;
             }
             if (!recalledMessages.addAll(keys)) {
-                NezumiLog.i("NezumiRecall", "target already marked");
+                NezumiLog.i(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "target already marked");
                 return;
             }
             NezumiPrefs.of(context).edit()
@@ -157,14 +158,14 @@ public final class RecalledMessages {
         for (View row : rows) {
             row.post(() -> refreshRecallRow(row));
         }
-        NezumiLog.i("NezumiRecall", "target marked keys=" + keys.size() + " stored=" + stored
+        NezumiLog.i(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "target marked keys=" + keys.size() + " stored=" + stored
             + " visibleRows=" + rows.size());
     }
 
     public static boolean isIncomingRecall(Object message) {
-        Context context = ZaloEnv.appContext();
+        Context context = ZaloEnv.appContext(Patch.KEEP_RECALLED_MESSAGES);
         if (context == null || message == null) {
-            NezumiLog.d("NezumiRecall", "lookup miss no-context-or-message");
+            NezumiLog.d(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "lookup miss no-context-or-message");
             return false;
         }
         try {
@@ -172,11 +173,11 @@ public final class RecalledMessages {
             synchronized (RECALL_LOCK) {
                 boolean hit = !keys.isEmpty() && loadRecallAccount(context) != null
                     && keys.stream().anyMatch(recalledMessages::contains);
-                NezumiLog.d("NezumiRecall", "lookup " + (hit ? "hit" : "miss"));
+                NezumiLog.d(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "lookup " + (hit ? "hit" : "miss"));
                 return hit;
             }
         } catch (ReflectiveOperationException | RuntimeException failure) {
-            NezumiLog.swallowedOnce("NezumiRecall", "recall lookup reflection failed", failure);
+            NezumiLog.swallowedOnce(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "recall lookup reflection failed", failure);
             return false;
         }
     }
@@ -185,17 +186,17 @@ public final class RecalledMessages {
         try {
             return row != null && isIncomingRecall(row.getClass().getMethod("getMessage").invoke(row));
         } catch (ReflectiveOperationException | RuntimeException failure) {
-            NezumiLog.swallowedOnce("NezumiRecall", "recall label check failed", failure);
+            NezumiLog.swallowedOnce(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "recall label check failed", failure);
             return false;
         }
     }
 
     public static String formatRecallTime(View row, String original) {
         if (!hasRecallLabel(row)) {
-            NezumiLog.d("NezumiRecall", "footer miss");
+            NezumiLog.d(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "footer miss");
             return original;
         }
-        NezumiLog.i("NezumiRecall", "footer hit");
+        NezumiLog.i(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "footer hit");
         String label = recalledLabel(row.getContext());
         return original == null || original.isEmpty() ? label : original + " - " + label;
     }
@@ -205,12 +206,12 @@ public final class RecalledMessages {
         synchronized (RECALL_LOCK) {
             RECALL_ROWS.put(row, Boolean.TRUE);
         }
-        NezumiLog.d("NezumiRecall", "row tracked");
+        NezumiLog.d(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "row tracked");
     }
 
     private static void refreshRecallRow(View row) {
         if (!row.isAttachedToWindow() || !hasRecallLabel(row)) return;
-        NezumiLog.i("NezumiRecall", "row refresh");
+        NezumiLog.i(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "row refresh");
         try {
             Class<?> base = Class.forName("com.zing.zalo.ui.chat.chatrow.ChatRow");
             Object message = base.getMethod("getMessage").invoke(row);
@@ -231,12 +232,12 @@ public final class RecalledMessages {
             row.requestLayout();
             row.invalidate();
         } catch (ReflectiveOperationException | RuntimeException failure) {
-            NezumiLog.w("NezumiRecall", "row refresh unavailable", failure);
+            NezumiLog.w(Patch.KEEP_RECALLED_MESSAGES, "RecalledMessages", "row refresh unavailable", failure);
         }
     }
 
     public static String recalledLabel(Context context) {
-        return ZaloEnv.isVietnamese(context) ? "Đã thu hồi" : "Recalled";
+        return ZaloEnv.isVietnamese(Patch.KEEP_RECALLED_MESSAGES, context) ? "Đã thu hồi" : "Recalled";
     }
 
     public static boolean isRecalledMessagesKept(Context context) {

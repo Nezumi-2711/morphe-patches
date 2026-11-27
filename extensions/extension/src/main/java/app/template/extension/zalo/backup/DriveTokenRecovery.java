@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.shared.ZaloEnv;
 
 /**
@@ -44,7 +45,7 @@ import app.template.extension.zalo.shared.ZaloEnv;
  * (token: String, state: int, intent: Intent).
  */
 public final class DriveTokenRecovery {
-    private static final String TAG = "NezumiDriveToken";
+    private static final String TAG = "DriveTokenRecovery";
     private static final int STATE_OK = 0;
     private static final int STATE_NEEDS_USER = 2;
     private static final long[] RETRY_DELAYS_MS = {2_000L, 6_000L};
@@ -111,7 +112,7 @@ public final class DriveTokenRecovery {
                     .getDeclaredMethod(name, types);
                 method.setAccessible(true);
             } catch (ReflectiveOperationException | RuntimeException failure) {
-                NezumiLog.w(TAG, "GoogleAuthUtil getToken not found", failure);
+                NezumiLog.w(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "GoogleAuthUtil getToken not found", failure);
                 throw failure;
             }
             getTokenMethod = method;
@@ -141,9 +142,9 @@ public final class DriveTokenRecovery {
                     .append("; email=").append(account.name == null || account.name.isEmpty() ? "missing" : "present");
             }
             if (isUserRecoverable(failure)) {
-                NezumiLog.i(TAG, message.toString());
+                NezumiLog.i(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, message.toString());
             } else {
-                NezumiLog.w(TAG, message.toString(), failure);
+                NezumiLog.w(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, message.toString(), failure);
             }
         } catch (Throwable ignored) {
             // Diagnostics must never change how Zalo handles the failure.
@@ -195,7 +196,7 @@ public final class DriveTokenRecovery {
                         logQuietly("Drive token retry skipped: no email in request (state " + state + ")");
                         break;
                     }
-                    NezumiLog.w(TAG, "Drive token refresh failed (state " + state + "), retrying in " + delay + " ms");
+                    NezumiLog.w(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "Drive token refresh failed (state " + state + "), retrying in " + delay + " ms");
                     Thread.sleep(delay);
                     result = invoke(useCase, retryRequest);
                     retries++;
@@ -212,7 +213,7 @@ public final class DriveTokenRecovery {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (RuntimeException | ReflectiveOperationException e) {
-            NezumiLog.w(TAG, "Drive token recovery skipped", e);
+            NezumiLog.w(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "Drive token recovery skipped", e);
         }
         return result;
     }
@@ -221,9 +222,9 @@ public final class DriveTokenRecovery {
     private static void logRefreshOutcome(int state, int retries) {
         try {
             if (state == STATE_OK) {
-                if (retries > 0) NezumiLog.i(TAG, "Drive token recovered after " + retries + " retries");
+                if (retries > 0) NezumiLog.i(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "Drive token recovered after " + retries + " retries");
             } else if (state != STATE_NEEDS_USER) {
-                NezumiLog.w(TAG, "Drive token refresh still failing after " + retries + " retries (state " + state + ")"
+                NezumiLog.w(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "Drive token refresh still failing after " + retries + " retries (state " + state + ")"
                     + (isMainThread() ? " [main thread, not retried]" : "") + "; " + deviceContext());
             }
         } catch (Throwable ignored) {
@@ -233,7 +234,7 @@ public final class DriveTokenRecovery {
 
     private static void logQuietly(String message) {
         try {
-            NezumiLog.w(TAG, message);
+            NezumiLog.w(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, message);
         } catch (Throwable ignored) {
             // Diagnostics must never affect the refresh result.
         }
@@ -241,7 +242,7 @@ public final class DriveTokenRecovery {
 
     /** Network, background restriction, process importance and microG / Play services state. Never throws. */
     private static String deviceContext() {
-        Context context = ZaloEnv.appContext();
+        Context context = ZaloEnv.appContext(Patch.DRIVE_BACKUP_VIA_MICROG);
         if (context == null) return "context unavailable";
         StringBuilder out = new StringBuilder();
         out.append("network=").append(networkState(context));
@@ -379,7 +380,7 @@ public final class DriveTokenRecovery {
     }
 
     private static void notifyConsentNeeded(Intent consent) {
-        Context context = ZaloEnv.appContext();
+        Context context = ZaloEnv.appContext(Patch.DRIVE_BACKUP_VIA_MICROG);
         if (context == null || consent == null) return;
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         long now = System.currentTimeMillis();
@@ -387,7 +388,7 @@ public final class DriveTokenRecovery {
 
         NotificationManager manager = context.getSystemService(NotificationManager.class);
         if (manager == null) return;
-        boolean vietnamese = ZaloEnv.isVietnamese(context);
+        boolean vietnamese = ZaloEnv.isVietnamese(Patch.DRIVE_BACKUP_VIA_MICROG, context);
         if (manager.getNotificationChannel(CHANNEL_ID) == null) {
             manager.createNotificationChannel(new NotificationChannel(CHANNEL_ID,
                 vietnamese ? "Sao lưu Google Drive" : "Google Drive backup",
@@ -412,12 +413,12 @@ public final class DriveTokenRecovery {
             manager.notify(NOTIFICATION_ID, notification);
             prefs.edit().putLong(KEY_LAST_NOTIFIED, now).apply();
         } catch (SecurityException e) {
-            NezumiLog.w(TAG, "Cannot post Drive consent notification", e);
+            NezumiLog.w(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "Cannot post Drive consent notification", e);
         }
     }
 
     private static void cancelConsentNotification() {
-        Context context = ZaloEnv.appContext();
+        Context context = ZaloEnv.appContext(Patch.DRIVE_BACKUP_VIA_MICROG);
         if (context == null) return;
         NotificationManager manager = context.getSystemService(NotificationManager.class);
         if (manager != null) manager.cancel(NOTIFICATION_ID);

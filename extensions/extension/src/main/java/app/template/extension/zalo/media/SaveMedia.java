@@ -5,12 +5,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 
 /** Hooks that unhide Zalo's native "Save" for profile avatar/cover and Story. Every hook fails safe. */
 public final class SaveMedia {
     private SaveMedia() { }
 
-    static final String TAG = "NezumiSaveMedia";
+    private static final String TAG = "SaveMedia";
 
     /**
      * FeedImageViewer.f8(): the original value is the "prevent screenshot" flag which diverts the "..." menu to
@@ -46,17 +47,17 @@ public final class SaveMedia {
             Object item = field(menuData, "b");
             Object feedItem = item == null ? null : field(item, "q1");
             if (feedItem == null) {
-                NezumiLog.w(TAG, "allowAlbumVideo: kept hidden, no feed item (b/q1 null)");
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "allowAlbumVideo: kept hidden, no feed item (b/q1 null)");
                 return blocked;
             }
             Object media = albumVideoMedia(feedItem);
             Object url = media == null ? null : field(media, "c");
             if (url instanceof String && !((String) url).trim().isEmpty()) return false;
-            NezumiLog.w(TAG, "allowAlbumVideo: kept hidden, no progressive mp4 (media "
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "allowAlbumVideo: kept hidden, no progressive mp4 (media "
                 + (media == null ? "null" : "without uri") + ")");
             return blocked;
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "allowAlbumVideo", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "allowAlbumVideo", failure);
             return blocked;
         }
     }
@@ -80,7 +81,7 @@ public final class SaveMedia {
     /** Story menu: offer native Download (id 36) for a story the viewer can already see. */
     public static boolean canSaveStory(Object story) {
         if (story == null) {
-            NezumiLog.w(TAG, "canSaveStory: story is null -> no Download");
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "canSaveStory: story is null -> no Download");
             return false;
         }
         try {
@@ -94,7 +95,7 @@ public final class SaveMedia {
                 + " -> " + (allowed ? "Download" : "no Download"), story);
             return allowed;
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "canSaveStory", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "canSaveStory", failure);
             return false;
         }
     }
@@ -112,7 +113,7 @@ public final class SaveMedia {
                 : "plain story (Download hook reachable)";
             logStoryOnce("storyMenu: " + branch, story);
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "logStoryMenu", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "logStoryMenu", failure);
         }
     }
 
@@ -121,7 +122,7 @@ public final class SaveMedia {
         String key = System.identityHashCode(story) + "|" + message;
         if (key.equals(lastStoryLog)) return;
         lastStoryLog = key;
-        NezumiLog.w(TAG, message);
+        NezumiLog.w(Patch.SAVE_MEDIA, TAG, message);
     }
 
     private static String describeUrl(String url) {

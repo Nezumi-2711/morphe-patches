@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 
 /**
  * "Tải ảnh về máy" / "Download photo" and "Tải video về máy" / "Download video" rows for the post "..." sheet
@@ -25,7 +26,7 @@ import app.template.extension.zalo.buglog.NezumiLog;
 public final class PostVideoSave {
     private PostVideoSave() { }
 
-    private static final String TAG = SaveMedia.TAG;
+    private static final String TAG = "PostVideoSave";
     static final int ITEM_ID = 9001; // 0x2329, video row, unused by the sheet (native ids go up to 0x2c)
     static final int PHOTO_ITEM_ID = 9002; // 0x232a, photo row
     private static final String ROW = "nc2";
@@ -52,7 +53,7 @@ public final class PostVideoSave {
     public static void addForFeed(List list, Object group, String feedId, int icon) {
         try {
             if (group == null || feedId == null) {
-                NezumiLog.w(TAG, "post menu: no row, " + (group == null ? "feed group" : "feed id") + " is null");
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu: no row, " + (group == null ? "feed group" : "feed id") + " is null");
                 return;
             }
             Object post = null;
@@ -68,12 +69,12 @@ public final class PostVideoSave {
                 }
             }
             if (post == null) {
-                NezumiLog.w(TAG, "post menu (timeline): no row, no post for the feed id in " + group.getClass().getName());
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu (timeline): no row, no post for the feed id in " + group.getClass().getName());
                 return;
             }
             add(list, post, icon, "type 1 timeline");
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "post menu (timeline): addForFeed failed", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu (timeline): addForFeed failed", failure);
         }
     }
 
@@ -84,19 +85,19 @@ public final class PostVideoSave {
             String where = "type " + menuType + (menuType == 3 ? " post detail" : menuType == 4 ? " profile"
                 : menuType == 5 ? " mutual feed" : "");
             if (post == null) {
-                NezumiLog.w(TAG, "post menu (" + where + "): no row, post is null");
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): no row, post is null");
                 return;
             }
             add(list, post, icon, where);
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "post menu: addForPost failed", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu: addForPost failed", failure);
         }
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private static void add(List list, Object post, int icon, String where) throws ReflectiveOperationException {
         if (list == null) {
-            NezumiLog.w(TAG, "post menu (" + where + "): no row, item list is null");
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): no row, item list is null");
             return;
         }
         ClassLoader loader = post.getClass().getClassLoader();
@@ -104,7 +105,7 @@ public final class PostVideoSave {
         try {
             addPhotoRow(list, post, icon, where, loader);
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "post menu (" + where + "): photo row failed", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): photo row failed", failure);
         }
         List<String[]> videos = findVideos(post, where);
         if (videos.isEmpty()) return;
@@ -116,7 +117,7 @@ public final class PostVideoSave {
         if (row == null) return;
         ROWS.put(row, new Entry(ITEM_ID, videos, null));
         list.add(row);
-        NezumiLog.i(TAG, "post menu (" + where + "): row added for " + count + " video(s)");
+        NezumiLog.i(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): row added for " + count + " video(s)");
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -124,19 +125,19 @@ public final class PostVideoSave {
         throws ReflectiveOperationException {
         Object media = post.getClass().getField("n").get(post); // ze9.n (mf9)
         if (media == null) {
-            NezumiLog.w(TAG, "post menu (" + where + "): no photo row, post has no media (ze9.n null)");
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): no photo row, post has no media (ze9.n null)");
             return;
         }
         PostPhotoSave.Photos photos = PostPhotoSave.find(post, media, where);
         int count = photos.urls.size();
         if (photos.candidates > 0) {
             // Tells whether a menu (notably post detail, type 3) carries the full photo list.
-            NezumiLog.i(TAG, "post menu (" + where + "): content type " + photos.contentType + ", " + count
+            NezumiLog.i(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): content type " + photos.contentType + ", " + count
                 + " photo URL(s) of " + photos.candidates + " photo item(s), more_photo=" + photos.morePhotos);
         }
         if (count == 0) return;
         if (photos.morePhotos > 0) {
-            NezumiLog.w(TAG, "post menu (" + where + "): no photo row, photo list incomplete (" + count
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): no photo row, photo list incomplete (" + count
                 + " known, more_photo=" + photos.morePhotos + ")");
             return;
         }
@@ -147,7 +148,7 @@ public final class PostVideoSave {
         if (row == null) return;
         ROWS.put(row, new Entry(PHOTO_ITEM_ID, null, new ArrayList<>(photos.urls)));
         list.add(row);
-        NezumiLog.i(TAG, "post menu (" + where + "): photo row added for " + count + " photo(s)");
+        NezumiLog.i(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): photo row added for " + count + " photo(s)");
     }
 
     /** Collects every video of the post with a usable mp4 or HLS link (album items first, else the single video). */
@@ -155,7 +156,7 @@ public final class PostVideoSave {
         List<String[]> videos = new ArrayList<>();
         Object media = post.getClass().getField("n").get(post); // ze9.n (mf9)
         if (media == null) {
-            NezumiLog.w(TAG, "post menu (" + where + "): no row, post has no media (ze9.n null)");
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): no row, post has no media (ze9.n null)");
             return videos;
         }
         Set<String> seen = new LinkedHashSet<>();
@@ -183,9 +184,9 @@ public final class PostVideoSave {
         }
         if (videos.isEmpty()) {
             if (albumVideos == 0 && !single) {
-                NezumiLog.d(TAG, "post menu (" + where + "): no row, post has no video");
+                NezumiLog.d(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): no row, post has no video");
             } else {
-                NezumiLog.w(TAG, "post menu (" + where + "): no row, " + (albumVideos > 0 ? albumVideos + " album video(s)" : "video")
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): no row, " + (albumVideos > 0 ? albumVideos + " album video(s)" : "video")
                     + " without mp4/HLS URL");
             }
         }
@@ -229,9 +230,9 @@ public final class PostVideoSave {
                     return method.invoke(null, companion, id, icon, title, null, false, null, null, null, 0x1f0);
                 }
             }
-            NezumiLog.w(TAG, "post menu: no row, factory mc2.a not found");
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu: no row, factory mc2.a not found");
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "post menu: no row, row creation failed", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu: no row, row creation failed", failure);
         }
         return null;
     }
@@ -250,22 +251,22 @@ public final class PostVideoSave {
                 if (id != ITEM_ID && id != PHOTO_ITEM_ID) return false;
                 // Our id on a row instance we did not build: refuse rather than guess (a stale list could belong to
                 // another post). Consumed so the host never sees the unknown id.
-                NezumiLog.w(TAG, "post menu: clicked " + (id == PHOTO_ITEM_ID ? "photo" : "video")
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu: clicked " + (id == PHOTO_ITEM_ID ? "photo" : "video")
                     + " row is not cached, nothing saved");
                 ZaloVideoSave.toast(id == PHOTO_ITEM_ID ? PostPhotoSave.failedText()
                     : ZaloVideoSave.text("Tải video thất bại", "Video download failed"));
                 return true;
             }
             if (entry.id == PHOTO_ITEM_ID) {
-                NezumiLog.i(TAG, "post menu: download " + entry.photos.size() + " photo(s)");
+                NezumiLog.i(Patch.SAVE_MEDIA, TAG, "post menu: download " + entry.photos.size() + " photo(s)");
                 PostPhotoSave.save(entry.photos);
             } else {
-                NezumiLog.i(TAG, "post menu: download " + entry.videos.size() + " video(s)");
+                NezumiLog.i(Patch.SAVE_MEDIA, TAG, "post menu: download " + entry.videos.size() + " video(s)");
                 ZaloVideoSave.saveVideos(entry.videos);
             }
             return true;
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "post menu: onClick failed", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu: onClick failed", failure);
             return false;
         }
     }

@@ -6,11 +6,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -41,7 +38,6 @@ final class LogStore {
     private final HeaderSource headerSource;
     private final LinkedBlockingQueue<Entry> queue = new LinkedBlockingQueue<>(4096);
     private final Object lock = new Object();
-    private final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US);
     private Writer writer;
     private long size;
 
@@ -123,7 +119,7 @@ final class LogStore {
             if (size >= MAX_FILE_BYTES) {
                 rotateLocked();
             }
-            String line = format.format(new Date(entry.time)) + ' ' + entry.body + '\n';
+            String line = LogLine.full(entry.time, entry.body) + '\n';
             writer.write(line);
             size += line.getBytes(StandardCharsets.UTF_8).length;
         } catch (IOException | RuntimeException failure) {

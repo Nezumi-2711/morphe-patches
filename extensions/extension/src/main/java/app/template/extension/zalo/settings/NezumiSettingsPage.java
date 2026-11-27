@@ -17,6 +17,7 @@ import android.widget.Toast;
 import app.template.extension.zalo.appearance.CustomFont;
 import app.template.extension.zalo.buglog.BugLogExport;
 import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.call.CallRecorder;
 import app.template.extension.zalo.chat.OnlineStatus;
 import app.template.extension.zalo.messages.OfficialAccounts;
@@ -103,7 +104,7 @@ public final class NezumiSettingsPage {
     }
 
     private static void show(Context context, boolean darkMode, EntryState state) {
-        boolean vietnamese = ZaloEnv.isVietnamese(context);
+        boolean vietnamese = ZaloEnv.isVietnamese(Patch.CORE, context);
         int features = state.features;
         boolean hasChatFeatures = (features & (FEATURE_ONLINE_STATUS | FEATURE_REACTION |
             FEATURE_TYPING | FEATURE_READ_RECEIPTS | FEATURE_DELIVERY_RECEIPTS |
@@ -185,7 +186,7 @@ public final class NezumiSettingsPage {
                 prefs.getBoolean(NezumiPrefs.KEEP_RECALLED_MESSAGES, false), darkMode,
                 (button, checked) -> {
                 prefs.edit().putBoolean(NezumiPrefs.KEEP_RECALLED_MESSAGES, checked).apply();
-                NezumiLog.i("NezumiRecall", "setting keep_recalled_messages=" + checked);
+                NezumiLog.i(Patch.KEEP_RECALLED_MESSAGES, "NezumiSettingsPage", "setting keep_recalled_messages=" + checked);
             });
         }
         if ((features & FEATURE_DISCOVERY) != 0) {

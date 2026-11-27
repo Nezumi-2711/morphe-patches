@@ -27,6 +27,7 @@ import java.lang.reflect.Constructor;
 
 import app.template.extension.zalo.appearance.CustomFont;
 import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 
 /** Zalo-styled view builders shared by Nezumi screens: rows, switches, icons, groups, pages. */
 public final class ZaloUi {
@@ -135,7 +136,7 @@ public final class ZaloUi {
                     .getConstructor(Context.class);
             text = (TextView) constructor.newInstance(context);
         } catch (ReflectiveOperationException | ClassCastException | SecurityException failure) {
-            NezumiLog.swallowedOnce("NezumiUi", "RobotoTextView unavailable, using TextView", failure);
+            NezumiLog.swallowedOnce(Patch.CORE, "ZaloUi", "RobotoTextView unavailable, using TextView", failure);
             text = new TextView(context);
         }
         text.setText(value);
@@ -222,7 +223,7 @@ public final class ZaloUi {
             icon.setColorFilter(BLUE, PorterDuff.Mode.SRC_IN);
             return icon;
         } catch (Exception failure) {
-            NezumiLog.swallowedOnce("NezumiUi", "gear icon unavailable, using line icon", failure);
+            NezumiLog.swallowedOnce(Patch.CORE, "ZaloUi", "gear icon unavailable, using line icon", failure);
             return new LineIcon(BLUE, 0);
         }
     }
@@ -266,7 +267,7 @@ public final class ZaloUi {
             native_.measure(unspecified, unspecified);
             if (native_.getMeasuredWidth() > 0 && native_.getMeasuredHeight() > 0) return native_;
         } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
-            NezumiLog.swallowedOnce("NezumiUi", "native switch unavailable, using ZaloToggle", failure);
+            NezumiLog.swallowedOnce(Patch.CORE, "ZaloUi", "native switch unavailable, using ZaloToggle", failure);
         }
         return new ZaloToggle(context, darkMode);
     }

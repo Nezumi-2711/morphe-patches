@@ -19,6 +19,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.shared.ZaloEnv;
 
 /**
@@ -35,7 +36,7 @@ import app.template.extension.zalo.shared.ZaloEnv;
 final class PostPhotoSave {
     private PostPhotoSave() { }
 
-    private static final String TAG = SaveMedia.TAG;
+    private static final String TAG = "PostPhotoSave";
 
     /** Photo URLs (origin, http(s), deduped, display order) plus the post's "more_photo" count. */
     static final class Photos {
@@ -77,15 +78,15 @@ final class PostPhotoSave {
             }
             if (photos.urls.isEmpty()) {
                 if (photos.candidates == 0) {
-                    NezumiLog.d(TAG, "post menu (" + where + "): no photo row, post has no photo (content type " + type + ")");
+                    NezumiLog.d(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): no photo row, post has no photo (content type " + type + ")");
                 } else {
-                    NezumiLog.w(TAG, "post menu (" + where + "): no photo row, " + photos.candidates
+                    NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): no photo row, " + photos.candidates
                         + " photo(s) without http origin URL (content type " + type + ")");
                 }
             }
         } catch (Throwable failure) {
             photos.urls.clear();
-            NezumiLog.w(TAG, "post menu (" + where + "): no photo row, photo lookup failed", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "post menu (" + where + "): no photo row, photo lookup failed", failure);
         }
         return photos;
     }
@@ -103,9 +104,9 @@ final class PostPhotoSave {
      */
     static void save(final List<String> urls) {
         final int total = urls == null ? 0 : urls.size();
-        final Context context = ZaloEnv.appContext();
+        final Context context = ZaloEnv.appContext(Patch.SAVE_MEDIA);
         if (context == null || total == 0) {
-            NezumiLog.w(TAG, "savePhotos: " + (context == null ? "no app context" : "no photos"));
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "savePhotos: " + (context == null ? "no app context" : "no photos"));
             ZaloVideoSave.toast(failedText());
             return;
         }
@@ -121,7 +122,7 @@ final class PostPhotoSave {
                     String base = "Zalo_" + stamp + (total == 1 ? "" : "_" + (i + 1));
                     if (saveOne(context, base, batch.get(i), (i + 1) + "/" + total)) saved++;
                 }
-                NezumiLog.i(TAG, "savePhotos: saved " + saved + "/" + total);
+                NezumiLog.i(Patch.SAVE_MEDIA, TAG, "savePhotos: saved " + saved + "/" + total);
                 if (saved == total) {
                     ZaloVideoSave.toast(total == 1
                         ? ZaloVideoSave.text("Đã tải ảnh vào Thư viện", "Photo saved to Gallery")
@@ -166,7 +167,7 @@ final class PostPhotoSave {
                 } finally {
                     bitmap.recycle();
                 }
-                NezumiLog.i(TAG, "save photo " + label + ": JPEG XL (" + temp.length() + " bytes) converted, saved as " + name);
+                NezumiLog.i(Patch.SAVE_MEDIA, TAG, "save photo " + label + ": JPEG XL (" + temp.length() + " bytes) converted, saved as " + name);
                 return true;
             }
             String name = base + "." + format[1];
@@ -180,10 +181,10 @@ final class PostPhotoSave {
                     }
                 }
             });
-            NezumiLog.i(TAG, "save photo " + label + ": saved as " + name + " (" + format[0] + ", " + temp.length() + " bytes)");
+            NezumiLog.i(Patch.SAVE_MEDIA, TAG, "save photo " + label + ": saved as " + name + " (" + format[0] + ", " + temp.length() + " bytes)");
             return true;
         } catch (Throwable failure) {
-            NezumiLog.e(TAG, "save photo " + label + ": failed", failure);
+            NezumiLog.e(Patch.SAVE_MEDIA, TAG, "save photo " + label + ": failed", failure);
             return false;
         } finally {
             //noinspection ResultOfMethodCallIgnored
@@ -221,7 +222,7 @@ final class PostPhotoSave {
             throw new IOException("JXL decode failed: code=" + code);
         }
         int orientation = optionsClass.getField("bmOrientation").getInt(options);
-        if (orientation != 0) NezumiLog.d(TAG, "save photo: JXL orientation " + orientation + " (not applied, as in the app)");
+        if (orientation != 0) NezumiLog.d(Patch.SAVE_MEDIA, TAG, "save photo: JXL orientation " + orientation + " (not applied, as in the app)");
         return bitmap;
     }
 
@@ -252,7 +253,7 @@ final class PostPhotoSave {
         if (n >= 12 && h[0] == 0 && h[1] == 0 && h[2] == 0 && h[3] == 0x0C && ascii(h, 4, "JXL ")) {
             return new String[] { "image/jxl", "jxl" };
         }
-        NezumiLog.w(TAG, "save photo: unknown format, saving as jpeg");
+        NezumiLog.w(Patch.SAVE_MEDIA, TAG, "save photo: unknown format, saving as jpeg");
         return new String[] { "image/jpeg", "jpg" };
     }
 

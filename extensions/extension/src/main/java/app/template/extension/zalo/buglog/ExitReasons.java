@@ -26,7 +26,7 @@ import app.template.extension.zalo.settings.NezumiPrefs;
 final class ExitReasons {
     private ExitReasons() { }
 
-    private static final String TAG = "ExitInfo";
+    private static final String TAG = "ExitReasons";
     private static final int MAX_TRACE_BYTES = 64 * 1024;
 
     static void recordAsync(Context context) {
@@ -35,7 +35,7 @@ final class ExitReasons {
             try {
                 record(context);
             } catch (Throwable failure) {
-                NezumiLog.swallowed(TAG, "reading exit reasons failed", failure);
+                NezumiLog.swallowed(Patch.CORE, TAG, "reading exit reasons failed", failure);
             }
         }, "NezumiExitInfo");
         thread.setDaemon(true);
@@ -64,7 +64,7 @@ final class ExitReasons {
                 || reason == ApplicationExitInfo.REASON_INITIALIZATION_FAILURE
                 || reason == ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE;
             StringBuilder line = new StringBuilder();
-            line.append(interesting ? "E" : "I").append('/').append(TAG).append(" [previous run] ")
+            line.append(LogLine.body(interesting ? 'E' : 'I', Patch.CORE.id, TAG, "previous run", "", null))
                 .append(reasonName(reason)).append(" at ").append(format.format(new Date(exit.getTimestamp())))
                 .append(", process ").append(exit.getProcessName())
                 .append(", status ").append(exit.getStatus())

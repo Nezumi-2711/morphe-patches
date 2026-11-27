@@ -30,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.shared.ZaloEnv;
 
 /**
@@ -104,13 +105,13 @@ public final class NotificationMarkAsRead {
             Bundle extras = notification.extras;
             String convId = conversationId(extras);
             if (convId == null) return;
-            Context context = ZaloEnv.appContext();
+            Context context = ZaloEnv.appContext(Patch.MARK_AS_READ_FROM_NOTIFICATIONS);
             if (context == null) return;
 
             String type = extras.getString(KEY_TYPE);
             String subType = extras.getString(KEY_SUB_TYPE);
-            String account = ZaloEnv.currentAccount();
-            boolean vietnamese = ZaloEnv.isVietnamese(context);
+            String account = ZaloEnv.currentAccount(Patch.MARK_AS_READ_FROM_NOTIFICATIONS);
+            boolean vietnamese = ZaloEnv.isVietnamese(Patch.MARK_AS_READ_FROM_NOTIFICATIONS, context);
 
             Intent one = receiverIntent(context, ACTION_MARK_READ, account)
                 .putExtra(EXTRA_CONV_ID, convId)
@@ -146,7 +147,7 @@ public final class NotificationMarkAsRead {
             result.addAll(others);
             notification.actions = result.toArray(new Notification.Action[0]);
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "Unable to add mark as read action", failure);
+            NezumiLog.w(Patch.MARK_AS_READ_FROM_NOTIFICATIONS, TAG, "Unable to add mark as read action", failure);
         }
     }
 
@@ -160,12 +161,12 @@ public final class NotificationMarkAsRead {
             action = intent == null ? null : intent.getAction();
             if (!ACTION_MARK_READ.equals(action) && !ACTION_MARK_ALL_READ.equals(action)) return false;
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "Unable to inspect receiver intent", failure);
+            NezumiLog.w(Patch.MARK_AS_READ_FROM_NOTIFICATIONS, TAG, "Unable to inspect receiver intent", failure);
             return false;
         }
         try {
             Context app = context != null && context.getApplicationContext() != null
-                ? context.getApplicationContext() : ZaloEnv.appContext();
+                ? context.getApplicationContext() : ZaloEnv.appContext(Patch.MARK_AS_READ_FROM_NOTIFICATIONS);
             if (app == null) return true;
             Runnable work = () -> process(app, intent, ACTION_MARK_ALL_READ.equals(action));
             if (Looper.myLooper() == Looper.getMainLooper()) {
@@ -174,7 +175,7 @@ public final class NotificationMarkAsRead {
                 work.run();
             }
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "Mark as read from notification failed", failure);
+            NezumiLog.w(Patch.MARK_AS_READ_FROM_NOTIFICATIONS, TAG, "Mark as read from notification failed", failure);
         }
         return true;
     }
@@ -206,18 +207,18 @@ public final class NotificationMarkAsRead {
             }
 
             String tappedAccount = intent.getStringExtra(EXTRA_ACCOUNT);
-            String account = ZaloEnv.currentAccount();
+            String account = ZaloEnv.currentAccount(Patch.MARK_AS_READ_FROM_NOTIFICATIONS);
             boolean sameAccount = tappedAccount == null || account == null || tappedAccount.equals(account);
             if (!sameAccount) {
-                NezumiLog.i(TAG, "Account changed since the notification was posted; dismiss only");
+                NezumiLog.i(Patch.MARK_AS_READ_FROM_NOTIFICATIONS, TAG, "Account changed since the notification was posted; dismiss only");
             } else if (!convIds.isEmpty()) {
                 try {
                     markRead(new ArrayList<>(convIds));
                 } catch (Throwable failure) {
-                    NezumiLog.w(TAG, "Unable to mark conversations read", failure);
+                    NezumiLog.w(Patch.MARK_AS_READ_FROM_NOTIFICATIONS, TAG, "Unable to mark conversations read", failure);
                 }
             }
-            NezumiLog.i(TAG, (all ? "Mark all" : "Mark one") + ": conversations=" + convIds.size()
+            NezumiLog.i(Patch.MARK_AS_READ_FROM_NOTIFICATIONS, TAG, (all ? "Mark all" : "Mark one") + ": conversations=" + convIds.size()
                 + ", notifications=" + dismiss.size());
 
             NotificationManager manager = context.getSystemService(NotificationManager.class);
@@ -226,11 +227,11 @@ public final class NotificationMarkAsRead {
                 try {
                     manager.cancel((String) entry[0], (Integer) entry[1]);
                 } catch (Throwable failure) {
-                    NezumiLog.swallowedOnce(TAG, "notification cancel failed", failure);
+                    NezumiLog.swallowedOnce(Patch.MARK_AS_READ_FROM_NOTIFICATIONS, TAG, "notification cancel failed", failure);
                 }
             }
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "Mark as read from notification failed", failure);
+            NezumiLog.w(Patch.MARK_AS_READ_FROM_NOTIFICATIONS, TAG, "Mark as read from notification failed", failure);
         }
     }
 
@@ -270,7 +271,7 @@ public final class NotificationMarkAsRead {
             StatusBarNotification[] active = manager == null ? null : manager.getActiveNotifications();
             if (active != null) return active;
         } catch (Throwable failure) {
-            NezumiLog.swallowedOnce(TAG, "active notifications unavailable", failure);
+            NezumiLog.swallowedOnce(Patch.MARK_AS_READ_FROM_NOTIFICATIONS, TAG, "active notifications unavailable", failure);
         }
         return new StatusBarNotification[0];
     }
@@ -328,7 +329,7 @@ public final class NotificationMarkAsRead {
             new Canvas(bitmap).drawPath(path, paint);
             cached = Icon.createWithBitmap(bitmap);
         } catch (Throwable failure) {
-            NezumiLog.swallowedOnce(TAG, "mark as read icon unavailable", failure);
+            NezumiLog.swallowedOnce(Patch.MARK_AS_READ_FROM_NOTIFICATIONS, TAG, "mark as read icon unavailable", failure);
         }
         if (cached == null) iconFailed = true;
         actionIcon = cached;

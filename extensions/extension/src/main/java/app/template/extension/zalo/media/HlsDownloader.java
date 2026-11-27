@@ -26,6 +26,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 
 /**
  * Minimal HLS (VOD) to mp4: picks the highest-bandwidth variant, downloads every segment (MPEG-TS or fMP4,
@@ -35,7 +36,7 @@ import app.template.extension.zalo.buglog.NezumiLog;
 final class HlsDownloader {
     private HlsDownloader() { }
 
-    private static final String TAG = SaveMedia.TAG;
+    private static final String TAG = "HlsDownloader";
     private static final int MAX_PLAYLIST_BYTES = 2 * 1024 * 1024;
 
     /** Downloads the HLS stream at {@code playlistUrl} and writes a playable mp4 to {@code out}. */
@@ -51,7 +52,7 @@ final class HlsDownloader {
                 if (best == null) throw new IOException("master playlist without variants");
                 mediaUrl = best.url;
                 audioUrl = best.audioUrl;
-                NezumiLog.w(TAG, "hls: master -> variant bandwidth=" + best.bandwidth
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "hls: master -> variant bandwidth=" + best.bandwidth
                     + (audioUrl != null ? ", separate audio" : ""));
                 text = fetchText(mediaUrl);
             }
@@ -63,7 +64,7 @@ final class HlsDownloader {
                 audio = new File(work, "audio");
                 downloadMedia(fetchText(audioUrl), audioUrl, audio);
             }
-            NezumiLog.w(TAG, "hls: downloaded " + videoKind + " " + video.length() + " bytes"
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "hls: downloaded " + videoKind + " " + video.length() + " bytes"
                 + (audio != null ? " + audio " + audio.length() + " bytes" : ""));
 
             File muxed = new File(work, "out.mp4");
@@ -293,7 +294,7 @@ final class HlsDownloader {
                         maxInput = Math.max(maxInput, format.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE));
                     }
                     tracks.add(new int[] { e, t, muxer.addTrack(format) });
-                    NezumiLog.w(TAG, "hls: remux track " + mime);
+                    NezumiLog.w(Patch.SAVE_MEDIA, TAG, "hls: remux track " + mime);
                     if (isVideo) haveVideo = true; else haveAudio = true;
                 }
             }

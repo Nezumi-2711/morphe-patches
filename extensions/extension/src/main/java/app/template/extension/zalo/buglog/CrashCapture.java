@@ -36,7 +36,7 @@ final class CrashCapture implements Thread.UncaughtExceptionHandler {
             if (failure != lastLogged) {
                 lastLogged = failure;
                 String marker = touchesExtension(failure) ? " [nezumi-frame]" : "";
-                NezumiLog.fileNow('E', "Crash", "uncaught exception in thread \"" + thread.getName() + "\"" + marker, failure);
+                NezumiLog.fileNow('E', Patch.CORE, "CrashCapture", "uncaught exception in thread \"" + thread.getName() + "\"" + marker, failure);
             }
         } catch (Throwable ignored) {
             // Fall through to the original handler no matter what.

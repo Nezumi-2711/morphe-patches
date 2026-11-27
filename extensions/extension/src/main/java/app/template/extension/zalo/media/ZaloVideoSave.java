@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Locale;
 
 import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.shared.ZaloEnv;
 
 /**
@@ -29,7 +30,7 @@ import app.template.extension.zalo.shared.ZaloEnv;
 public final class ZaloVideoSave {
     private ZaloVideoSave() { }
 
-    private static final String TAG = SaveMedia.TAG;
+    private static final String TAG = "ZaloVideoSave";
     private static final int ITEM_TYPE = 9001;
     private static final int ICON_DOWNLOAD = 0x7f080c21; // vkk.ic_bottom_sheet_menu_download (26.11.01)
     private static final String CONTENT = "com.zing.zalo.shortvideo.domain.entity.content.Content";
@@ -42,7 +43,7 @@ public final class ZaloVideoSave {
     public static void addItem(Object sheet, ArrayList list) {
         try {
             if (list == null) {
-                NezumiLog.w(TAG, "addItem: row list is null, nothing added");
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "addItem: row list is null, nothing added");
                 return;
             }
             if (!isDownloadable(findVideoSafe(sheet))) {
@@ -59,9 +60,9 @@ public final class ZaloVideoSave {
                     return;
                 }
             }
-            NezumiLog.w(TAG, "item constructor not found");
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "item constructor not found");
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "addItem", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "addItem", failure);
         }
     }
 
@@ -83,7 +84,7 @@ public final class ZaloVideoSave {
             start(mp4, hls);
             return true;
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "onItemClick", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "onItemClick", failure);
             return false;
         }
     }
@@ -93,7 +94,7 @@ public final class ZaloVideoSave {
             Method method = sheet.getClass().getMethod("w6");
             method.invoke(sheet);
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "dismiss", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "dismiss", failure);
         }
     }
 
@@ -103,7 +104,7 @@ public final class ZaloVideoSave {
         try {
             return findVideo(sheet);
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "findVideo", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "findVideo", failure);
             return null;
         }
     }
@@ -113,7 +114,7 @@ public final class ZaloVideoSave {
         try {
             return videoMp4(video) != null || videoHls(video) != null;
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "isDownloadable", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "isDownloadable", failure);
             return false;
         }
     }
@@ -149,23 +150,23 @@ public final class ZaloVideoSave {
             String kindName = kind instanceof Enum ? ((Enum<?>) kind).name() : String.valueOf(kind);
             if (!"SHARE_MORE".equals(kindName)) return false;
             if (content == null) {
-                NezumiLog.w(TAG, "forceNativeSheet: kind=SHARE_MORE, content null -> keep Zinstant sheet");
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "forceNativeSheet: kind=SHARE_MORE, content null -> keep Zinstant sheet");
                 return false;
             }
             Class<?> videoClass = Class.forName(VIDEO, false, content.getClass().getClassLoader());
             if (!videoClass.isInstance(content)) {
-                NezumiLog.w(TAG, "forceNativeSheet: kind=SHARE_MORE, content " + content.getClass().getName()
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "forceNativeSheet: kind=SHARE_MORE, content " + content.getClass().getName()
                     + " is not a Video -> keep Zinstant sheet");
                 return false;
             }
             boolean mp4 = videoMp4(content) != null;
             boolean hls = videoHls(content) != null;
             boolean force = mp4 || hls;
-            NezumiLog.w(TAG, "forceNativeSheet: kind=SHARE_MORE, mp4 " + (mp4 ? "present" : "missing")
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "forceNativeSheet: kind=SHARE_MORE, mp4 " + (mp4 ? "present" : "missing")
                 + ", hls " + (hls ? "present" : "missing") + (force ? " -> native sheet" : " -> keep Zinstant sheet"));
             return force;
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "forceNativeSheet: failed -> keep Zinstant sheet", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "forceNativeSheet: failed -> keep Zinstant sheet", failure);
             return false;
         }
     }
@@ -177,25 +178,25 @@ public final class ZaloVideoSave {
     private static void explainMissing(Object sheet) {
         try {
             if (sheet == null) {
-                NezumiLog.w(TAG, "addItem: no row, sheet is null");
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "addItem: no row, sheet is null");
                 return;
             }
             Object handler = findHandler(sheet);
             if (handler == null) {
-                NezumiLog.w(TAG, "addItem: no row, action handler Q1 missing/null on " + sheet.getClass().getName());
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "addItem: no row, action handler Q1 missing/null on " + sheet.getClass().getName());
                 return;
             }
             Object video = findVideo(sheet);
             if (video == null) {
-                NezumiLog.w(TAG, "addItem: no row, no Video entity found in handler " + handler.getClass().getName());
+                NezumiLog.w(Patch.SAVE_MEDIA, TAG, "addItem: no row, no Video entity found in handler " + handler.getClass().getName());
                 return;
             }
             Object mp4 = video.getClass().getField("h").get(video); // Video.h = "mp4_265"
             Object hls = video.getClass().getField("g").get(video); // Video.g = "hls" / "hls_url"
-            NezumiLog.w(TAG, "addItem: no row, mp4 (Video.h) " + describe(mp4) + ", hls (Video.g) " + describe(hls)
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "addItem: no row, mp4 (Video.h) " + describe(mp4) + ", hls (Video.g) " + describe(hls)
                 + " -> no usable link");
         } catch (Throwable failure) {
-            NezumiLog.w(TAG, "addItem: no row, diagnostics failed", failure);
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "addItem: no row, diagnostics failed", failure);
         }
     }
 
@@ -255,9 +256,9 @@ public final class ZaloVideoSave {
      */
     static void saveVideos(final List<String[]> videos) {
         final int total = videos == null ? 0 : videos.size();
-        final Context context = ZaloEnv.appContext();
+        final Context context = ZaloEnv.appContext(Patch.SAVE_MEDIA);
         if (context == null || total == 0) {
-            NezumiLog.w(TAG, "saveVideos: " + (context == null ? "no app context" : "no videos"));
+            NezumiLog.w(Patch.SAVE_MEDIA, TAG, "saveVideos: " + (context == null ? "no app context" : "no videos"));
             toast(text("Tải video thất bại", "Video download failed"));
             return;
         }
@@ -276,7 +277,7 @@ public final class ZaloVideoSave {
                     String name = "Zalo_" + stamp + (total == 1 ? "" : "_" + (i + 1)) + ".mp4";
                     if (saveOne(context, name, mp4, hls, (i + 1) + "/" + total)) saved++;
                 }
-                NezumiLog.i(TAG, "saveVideos: saved " + saved + "/" + total);
+                NezumiLog.i(Patch.SAVE_MEDIA, TAG, "saveVideos: saved " + saved + "/" + total);
                 if (saved == total) {
                     toast(total == 1
                         ? text("Đã tải video vào Thư viện", "Video saved to Gallery")
@@ -301,27 +302,27 @@ public final class ZaloVideoSave {
                         download(mp4, out);
                     }
                 });
-                NezumiLog.i(TAG, "save " + label + ": mp4 saved as " + name);
+                NezumiLog.i(Patch.SAVE_MEDIA, TAG, "save " + label + ": mp4 saved as " + name);
                 return true;
             } catch (Throwable failure) {
-                NezumiLog.e(TAG, "save " + label + ": mp4 failed" + (hls != null ? ", trying HLS" : ""), failure);
+                NezumiLog.e(Patch.SAVE_MEDIA, TAG, "save " + label + ": mp4 failed" + (hls != null ? ", trying HLS" : ""), failure);
             }
         }
         if (hls != null) {
             try {
-                if (mp4 == null) NezumiLog.w(TAG, "save " + label + ": HLS-only video, downloading stream");
+                if (mp4 == null) NezumiLog.w(Patch.SAVE_MEDIA, TAG, "save " + label + ": HLS-only video, downloading stream");
                 MediaStoreWriter.saveVideo(context, name, new MediaStoreWriter.Source() {
                     @Override public void writeTo(OutputStream out) throws IOException {
                         HlsDownloader.download(hls, context.getCacheDir(), out);
                     }
                 });
-                NezumiLog.i(TAG, "save " + label + ": HLS saved as " + name);
+                NezumiLog.i(Patch.SAVE_MEDIA, TAG, "save " + label + ": HLS saved as " + name);
                 return true;
             } catch (Throwable failure) {
-                NezumiLog.e(TAG, "save " + label + ": HLS failed", failure);
+                NezumiLog.e(Patch.SAVE_MEDIA, TAG, "save " + label + ": HLS failed", failure);
             }
         }
-        if (mp4 == null && hls == null) NezumiLog.w(TAG, "save " + label + ": no mp4 or HLS link");
+        if (mp4 == null && hls == null) NezumiLog.w(Patch.SAVE_MEDIA, TAG, "save " + label + ": no mp4 or HLS link");
         return false;
     }
 
@@ -362,12 +363,12 @@ public final class ZaloVideoSave {
 
     /** Picks the label for Zalo's current UI language (Vietnamese or English). */
     static String text(String vietnamese, String english) {
-        Context context = ZaloEnv.appContext();
-        return context == null || ZaloEnv.isVietnamese(context) ? vietnamese : english;
+        Context context = ZaloEnv.appContext(Patch.SAVE_MEDIA);
+        return context == null || ZaloEnv.isVietnamese(Patch.SAVE_MEDIA, context) ? vietnamese : english;
     }
 
     static void toast(final String message) {
-        final Context context = ZaloEnv.appContext();
+        final Context context = ZaloEnv.appContext(Patch.SAVE_MEDIA);
         if (context == null) return;
         MAIN.post(new Runnable() {
             @Override public void run() {

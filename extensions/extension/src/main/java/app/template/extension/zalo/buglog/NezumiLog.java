@@ -65,7 +65,7 @@ public final class NezumiLog {
                 });
             }
             if (enabled) {
-                i("BugLog", "process start: " + processName);
+                i(Patch.CORE, "NezumiLog", "process start: " + processName);
                 if (mainProcess) ExitReasons.recordAsync(context);
             }
         } catch (Throwable failure) {
@@ -88,10 +88,10 @@ public final class NezumiLog {
         NezumiPrefs.of(context).edit().putBoolean(NezumiPrefs.BUG_LOG, value).apply();
         if (value) {
             enabled = true;
-            i("BugLog", "bug log enabled");
+            i(Patch.CORE, "NezumiLog", "bug log enabled");
             if (mainProcess) ExitReasons.recordAsync(context);
         } else {
-            i("BugLog", "bug log disabled");
+            i(Patch.CORE, "NezumiLog", "bug log disabled");
             enabled = false;
             LogStore current = store;
             if (current != null) current.flush();
@@ -107,72 +107,78 @@ public final class NezumiLog {
     }
 
     // ---- logging API -------------------------------------------------------------------------
+    // Every call names the patch it runs for, so a shared bug log can be split by patch, and a
+    // tag that is the calling class's simple name.
 
     /** Debug: logcat only, never written to the bug-log file. */
-    public static void d(String tag, String message) {
-        Log.d(tag, String.valueOf(message));
+    public static void d(Patch patch, String tag, String message) {
+        Log.d(tag, prefixed(patch, message));
     }
 
-    public static void i(String tag, String message) {
-        Log.i(tag, String.valueOf(message));
-        file('I', tag, message, null);
+    public static void i(Patch patch, String tag, String message) {
+        Log.i(tag, prefixed(patch, message));
+        file('I', patch, tag, message, null);
     }
 
-    public static void w(String tag, String message) {
-        Log.w(tag, String.valueOf(message));
-        file('W', tag, message, null);
+    public static void w(Patch patch, String tag, String message) {
+        Log.w(tag, prefixed(patch, message));
+        file('W', patch, tag, message, null);
     }
 
-    public static void w(String tag, String message, Throwable failure) {
-        Log.w(tag, String.valueOf(message), failure);
-        file('W', tag, message, failure);
+    public static void w(Patch patch, String tag, String message, Throwable failure) {
+        Log.w(tag, prefixed(patch, message), failure);
+        file('W', patch, tag, message, failure);
     }
 
-    public static void e(String tag, String message) {
-        Log.e(tag, String.valueOf(message));
-        file('E', tag, message, null);
+    public static void e(Patch patch, String tag, String message) {
+        Log.e(tag, prefixed(patch, message));
+        file('E', patch, tag, message, null);
     }
 
-    public static void e(String tag, String message, Throwable failure) {
-        Log.e(tag, String.valueOf(message), failure);
-        file('E', tag, message, failure);
+    public static void e(Patch patch, String tag, String message, Throwable failure) {
+        Log.e(tag, prefixed(patch, message), failure);
+        file('E', patch, tag, message, failure);
     }
 
     /** Records a swallowed failure: file only (with stack trace), keeps logcat as quiet as before. */
-    public static void swallowed(String tag, String message, Throwable failure) {
-        file('W', tag, message, failure);
+    public static void swallowed(Patch patch, String tag, String message, Throwable failure) {
+        file('W', patch, tag, message, failure);
     }
 
     /**
-     * Like {@link #swallowed} but writes each tag+message at most once per process. For fallbacks
-     * on hot paths (per row, per conversation) where a broken reflection target would otherwise
-     * repeat the same stack trace thousands of times and rotate the useful lines away.
+     * Like {@link #swallowed} but writes each patch+tag+message at most once per process. For
+     * fallbacks on hot paths (per row, per conversation) where a broken reflection target would
+     * otherwise repeat the same stack trace thousands of times and rotate the useful lines away.
      */
-    public static void swallowedOnce(String tag, String message, Throwable failure) {
+    public static void swallowedOnce(Patch patch, String tag, String message, Throwable failure) {
         if (!enabled || store == null) return;
-        if (SEEN.size() < 512 && SEEN.add(tag + '\u0000' + message)) {
-            file('W', tag, message + " (further occurrences suppressed)", failure);
+        if (SEEN.size() < 512 && SEEN.add(patch.id + '\u0000' + tag + '\u0000' + message)) {
+            file('W', patch, tag, message + " (further occurrences suppressed)", failure);
         }
     }
 
     private static final java.util.Set<String> SEEN =
         java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
 
-    private static void file(char level, String tag, String message, Throwable failure) {
+    private static String prefixed(Patch patch, String message) {
+        return "[" + patch.id + "] " + message;
+    }
+
+    private static void file(char level, Patch patch, String tag, String message, Throwable failure) {
         LogStore current = store;
         if (!enabled || current == null) return;
         try {
-            current.append(System.currentTimeMillis(), line(level, tag, message, failure));
+            current.append(System.currentTimeMillis(), line(level, patch, tag, message, failure));
         } catch (Throwable ignored) {
             // Logging must never throw into the hooked code.
         }
     }
 
     /** Synchronous write for the crash handler: the process may be gone right after this returns. */
-    static void fileNow(char level, String tag, String message, Throwable failure) {
+    static void fileNow(char level, Patch patch, String tag, String message, Throwable failure) {
         LogStore current = store;
         if (!enabled || current == null) return;
-        current.appendNow(System.currentTimeMillis(), line(level, tag, message, failure));
+        current.appendNow(System.currentTimeMillis(), line(level, patch, tag, message, failure));
     }
 
     static void fileRaw(String text) {
@@ -181,12 +187,10 @@ public final class NezumiLog {
         current.append(System.currentTimeMillis(), LogRedactor.redact(text));
     }
 
-    private static String line(char level, String tag, String message, Throwable failure) {
-        StringBuilder out = new StringBuilder();
-        out.append(level).append('/').append(tag).append(" [").append(Thread.currentThread().getName()).append("] ")
-            .append(LogRedactor.redact(String.valueOf(message)));
-        if (failure != null) out.append('\n').append(LogRedactor.redact(stackTrace(failure)));
-        return out.toString();
+    private static String line(char level, Patch patch, String tag, String message, Throwable failure) {
+        return LogLine.body(level, patch.id, tag, Thread.currentThread().getName(),
+            LogRedactor.redact(String.valueOf(message)),
+            failure == null ? null : LogRedactor.redact(stackTrace(failure)));
     }
 
     static String stackTrace(Throwable failure) {
