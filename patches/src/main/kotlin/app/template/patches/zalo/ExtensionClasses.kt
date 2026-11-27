@@ -28,6 +28,11 @@ internal const val LOCAL_QUICK_MESSAGES = "$EXTENSION/quickmessage/LocalQuickMes
 internal const val MICROG_SUPPORT = "$EXTENSION/backup/ZaloMicroGSupport;"
 internal const val DRIVE_TOKEN_RECOVERY = "$EXTENSION/backup/DriveTokenRecovery;"
 internal const val NEZUMI_LOG = "$EXTENSION/buglog/NezumiLog;"
+internal const val NEZUMI_LOG_HITS = "$EXTENSION/buglog/Hits;"
+internal const val NEZUMI_LOG_PATCH = "$EXTENSION/buglog/Patch;"
+
+/** Descriptor prefix of every extension class; methods under it are Nezumi code, not Zalo code. */
+internal const val EXTENSION_DESCRIPTOR_PREFIX = "$EXTENSION/"
 
 /** Class name (not descriptor) used where Android needs a component name, e.g. the manifest. */
 internal const val SOUND_PROVIDER_CLASS = "app.template.extension.zalo.sound.SoundProvider"

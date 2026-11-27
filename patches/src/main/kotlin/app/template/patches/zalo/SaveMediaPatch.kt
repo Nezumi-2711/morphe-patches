@@ -172,6 +172,7 @@ val saveMediaPatch = bytecodePatch(
     extendWith("extensions/extension.mpe")
 
     execute {
+        registerApplied(PatchId.SAVE_MEDIA)
         check(ViewerMoreMenuFingerprint.matchAll(1..1).size == 1)
         check(ViewerFriendFlagFingerprint.matchAll(1..1).size == 1)
         check(StoryMenuBuilderFingerprint.matchAll(1..1).size == 1)
@@ -611,5 +612,8 @@ val saveMediaPatch = bytecodePatch(
             if-eqz v0, :nezumi_native_click
             return-void
         """.trimIndent(), ExternalLabel("nezumi_native_click", clickFirst))
+
+        registerHooks(PatchId.SAVE_MEDIA, moreMenu, friendMethod, story, sheet, build,
+            ShortVideoShareSheetGateFingerprint.method, FeedMenuItemClickFingerprint.method, click)
     }
 }

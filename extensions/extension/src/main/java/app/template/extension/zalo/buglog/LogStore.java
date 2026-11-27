@@ -26,25 +26,32 @@ final class LogStore {
     private static final class Entry {
         final long time;
         final String body;
+        /** Non-null for the session header, built on the writer thread to keep it off app startup. */
+        final HeaderSource session;
 
         Entry(long time, String body) {
+            this(time, body, null);
+        }
+
+        Entry(long time, String body, HeaderSource session) {
             this.time = time;
             this.body = body;
+            this.session = session;
         }
     }
 
     private final File dir;
     private final String baseName;
-    private final HeaderSource headerSource;
     private final LinkedBlockingQueue<Entry> queue = new LinkedBlockingQueue<>(4096);
     private final Object lock = new Object();
     private Writer writer;
     private long size;
+    /** The current session's header, repeated at the top of the file after a rotation. */
+    private String sessionHeader;
 
-    LogStore(File dir, String baseName, HeaderSource headerSource) {
+    LogStore(File dir, String baseName) {
         this.dir = dir;
         this.baseName = baseName;
-        this.headerSource = headerSource;
         Thread thread = new Thread(this::drainLoop, "NezumiBugLog");
         thread.setDaemon(true);
         thread.start();
@@ -52,6 +59,11 @@ final class LogStore {
 
     File dir() {
         return dir;
+    }
+
+    /** Queues the session header block; it is written without a timestamp prefix. */
+    void startSession(HeaderSource header) {
+        queue.offer(new Entry(System.currentTimeMillis(), null, header));
     }
 
     /** Queues a line; drops it when the queue is full rather than blocking the caller. */
@@ -119,7 +131,13 @@ final class LogStore {
             if (size >= MAX_FILE_BYTES) {
                 rotateLocked();
             }
-            String line = LogLine.full(entry.time, entry.body) + '\n';
+            String line;
+            if (entry.session != null) {
+                sessionHeader = header(entry.session);
+                line = sessionHeader + '\n';
+            } else {
+                line = LogLine.full(entry.time, entry.body) + '\n';
+            }
             writer.write(line);
             size += line.getBytes(StandardCharsets.UTF_8).length;
         } catch (IOException | RuntimeException failure) {
@@ -145,14 +163,18 @@ final class LogStore {
         openLocked();
     }
 
-    private void writeHeaderLocked() throws IOException {
-        String header;
+    private static String header(HeaderSource source) {
         try {
-            header = headerSource.header();
+            return source.header();
         } catch (RuntimeException failure) {
-            header = "header unavailable: " + failure;
+            return "===== session header unavailable: " + failure + " =====";
         }
-        String text = "===== Nezumi bug log =====\n" + header + "\n==========================\n";
+    }
+
+    private void writeHeaderLocked() throws IOException {
+        String text = "===== Nezumi bug log =====\n";
+        // After a rotation the new file still says which session it belongs to.
+        if (sessionHeader != null) text += sessionHeader.replaceFirst(" start =====", " continued =====") + '\n';
         writer.write(text);
         size += text.getBytes(StandardCharsets.UTF_8).length;
     }

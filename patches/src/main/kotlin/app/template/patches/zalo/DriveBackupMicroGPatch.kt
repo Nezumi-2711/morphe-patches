@@ -214,6 +214,7 @@ val driveBackupMicroGPatch = bytecodePatch(
     extendWith("extensions/extension.mpe")
 
     execute {
+        registerApplied(PatchId.DRIVE_BACKUP_VIA_MICROG)
         check(BackupConfiguration.matchAll(1..1).size == 1)
         check(BackupEligibility.matchAll(1..1).size == 1)
         enableDriveMediaBackup(BackupConfiguration.method)
@@ -246,6 +247,7 @@ val driveBackupMicroGPatch = bytecodePatch(
                 m.invokes { it.name == "getAccountsByType" } && m.implementation!!.tryBlocks.isEmpty()
         }.name
         val counts = mutableMapOf("binding" to 0, "type" to 0, "picker" to 0, "refresh" to 0, "result" to 0, "launch" to 0)
+        val modified = LinkedHashSet<MutableMethod>()
         classDefForEach { classDef ->
             if (classDef.type !in owners) return@classDefForEach
             val mutableClass = mutableClassDefBy(classDef)
@@ -258,6 +260,7 @@ val driveBackupMicroGPatch = bytecodePatch(
                 if (picker) {
                     replaceAccountPicker(method, classDef.type)
                     counts["picker"] = counts.getValue("picker") + 1
+                    modified += method
                     return@forEach
                 }
                 original.implementation!!.instructions.forEachIndexed { index, instruction ->
@@ -267,12 +270,15 @@ val driveBackupMicroGPatch = bytecodePatch(
                     if (literal == "authAccount" && classDef.type == SYNC_VIEW && original.name == "onActivityResult") {
                         method.replaceInstruction(index, "sget-object v$register, Landroid/accounts/AccountManager;->KEY_ACCOUNT_NAME:Ljava/lang/String;")
                         counts["result"] = counts.getValue("result") + 1
+                        modified += method
                     } else if (literal == "com.google.android.gms" && classDef.type in authOwners) {
                         method.replaceInstruction(index, "const-string v$register, \"app.revanced.android.gms\"")
                         counts["binding"] = counts.getValue("binding") + 1
+                        modified += method
                     } else if (literal == "com.google" && classDef.type in scopedAccounts + authOwners) {
                         method.replaceInstruction(index, "const-string v$register, \"app.revanced\"")
                         counts["type"] = counts.getValue("type") + 1
+                        modified += method
                     }
                     val call = reference as? MethodReference
                     if (classDef.type == SYNC_VIEW && original.name == "onActivityResult" &&
@@ -281,6 +287,7 @@ val driveBackupMicroGPatch = bytecodePatch(
                         check(invoke.registerCount == 2)
                         method.replaceInstruction(index, "invoke-static {v${invoke.registerC}, v${invoke.registerD}}, $MICROG_SUPPORT->scheduleAccountRefresh(Ljava/lang/Object;Ljava/lang/String;)V")
                         counts["refresh"] = counts.getValue("refresh") + 1
+                        modified += method
                     }
                 }
                 if (classDef.type == "Lcom/zing/zalo/ui/ZaloLauncherActivity;" && original.name == "onCreate" &&
@@ -288,6 +295,7 @@ val driveBackupMicroGPatch = bytecodePatch(
                     check(method.implementation!!.registerCount > 2)
                     method.addInstructions(0, "move-object/from16 v0, p0\ninvoke-static {v0}, $MICROG_SUPPORT->checkGmsCore(Landroid/app/Activity;)Z\nmove-result v0")
                     counts["launch"] = counts.getValue("launch") + 1
+                    modified += method
                 }
             }
         }
@@ -297,6 +305,8 @@ val driveBackupMicroGPatch = bytecodePatch(
         wrapDriveTokenRefresh(DriveTokenGetter.also { check(it.matchAll(1..1).size == 1) }.method,
             DriveTokenRefresher.classDef.type, DriveTokenRefresher.method.name)
         wrapDriveGetToken(DriveTokenRefresher.method, GoogleAuthTokenService.originalClassDef)
+        registerHooks(PatchId.DRIVE_BACKUP_VIA_MICROG, BackupConfiguration.method, eligibility, *modified.toTypedArray(),
+            DriveTokenGetter.method, DriveTokenRefresher.method)
     }
 }
 

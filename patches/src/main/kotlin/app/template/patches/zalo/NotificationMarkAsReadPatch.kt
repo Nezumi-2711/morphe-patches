@@ -60,6 +60,7 @@ val notificationMarkAsReadPatch = bytecodePatch(
     extendWith("extensions/extension.mpe")
 
     execute {
+        registerApplied(PatchId.MARK_AS_READ_FROM_NOTIFICATIONS)
         check(NotificationPostFingerprint.matchAll(1..1).size == 1)
         val post = NotificationPostFingerprint.method
         check(post.parameters.map { it.type }.take(2) == listOf("I", "Landroid/app/Notification;"))
@@ -79,5 +80,6 @@ val notificationMarkAsReadPatch = bytecodePatch(
             if-eqz v0, :nezumi_original_receiver
             return-void
         """.trimIndent(), ExternalLabel("nezumi_original_receiver", originalStart))
+        registerHooks(PatchId.MARK_AS_READ_FROM_NOTIFICATIONS, post, handler)
     }
 }

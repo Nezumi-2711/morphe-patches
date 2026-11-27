@@ -90,6 +90,7 @@ val unlimitedQuickMessagesPatch = bytecodePatch(
     extendWith("extensions/extension.mpe")
 
     execute {
+        registerApplied(PatchId.UNLIMITED_QUICK_MESSAGES)
         val sites = mutableListOf<QuickMessageSite>()
 
         fun mutableOf(classDef: com.android.tools.smali.dexlib2.iface.ClassDef, original: com.android.tools.smali.dexlib2.iface.Method) =
@@ -362,5 +363,8 @@ val unlimitedQuickMessagesPatch = bytecodePatch(
             :nezumi_done
             return-void
         """.trimIndent())
+
+        registerHooks(PatchId.UNLIMITED_QUICK_MESSAGES, *sites.map { it.method }.distinct().toTypedArray(),
+            sync, push, pushUpdate, pushDelete, create, update, delete)
     }
 }
