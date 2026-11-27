@@ -42,7 +42,8 @@ private object ChatDrawerButtonFingerprint : Fingerprint(
 val hideReadReceiptsPatch = bytecodePatch(
     name = "Hide read receipts",
     description = "Keep outgoing read receipts private while retaining delivery ACKs when enabled in Nezumi Settings. " +
-        "Adds a Mark as read button to the chat toolbar for sending a read receipt on demand.",
+        "Adds a Mark as read button to the chat toolbar for sending a read receipt on demand; " +
+        "the button can be hidden in Nezumi Settings.",
     default = true,
 ) {
     compatibleWith(Compatibility(
@@ -57,6 +58,7 @@ val hideReadReceiptsPatch = bytecodePatch(
     extendWith("extensions/extension.mpe")
 
     execute {
+        registerApplied(PatchId.HIDE_READ_RECEIPTS)
         check(SeenAckFingerprint.matchAll(1..1).size == 1)
 
         val seenAck = SeenAckFingerprint.method
@@ -105,5 +107,6 @@ val hideReadReceiptsPatch = bytecodePatch(
         returns.asReversed().forEach { index ->
             drawerRefresh.addInstructions(index, "invoke-static {p0}, $MARK_AS_READ->attach(Ljava/lang/Object;)V")
         }
+        registerHooks(PatchId.HIDE_READ_RECEIPTS, seenAck, drawerRefresh)
     }
 }

@@ -14,7 +14,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.text.TextPaint;
-import android.util.Log;
 import android.widget.Toast;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -23,11 +22,15 @@ import java.util.Locale;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.settings.NezumiPrefs;
+import app.template.extension.zalo.settings.RestartPrompt;
 
 public final class CustomFont extends Fragment {
-    private static final String FONT = "custom_font";
-    private static final String TAG = "nezumi-font-picker";
+    /** Pref key of the selected font file; also the option's key in {@link RestartPrompt}. */
+    public static final String FONT = "custom_font";
+    private static final String TAG = "CustomFont";
     private static final int PICK_FONT = 1042;
     private static Typeface cachedFont;
     private static String cachedPath;
@@ -43,7 +46,8 @@ public final class CustomFont extends Fragment {
             if (!path.equals(cachedPath)) {
                 try {
                     cachedFont = Typeface.createFromFile(new File(context.getFilesDir(), path));
-                } catch (RuntimeException ignored) {
+                } catch (RuntimeException failure) {
+                    NezumiLog.swallowedOnce(Patch.CUSTOM_FONT, TAG, "custom font file failed to load", failure);
                     cachedFont = null;
                 }
                 cachedPath = path;
@@ -69,7 +73,7 @@ public final class CustomFont extends Fragment {
     public static void diagnoseRichItem(Context context, Typeface original, Typeface requested, Typeface actual) {
         boolean selected = context != null && NezumiPrefs.of(context).contains(FONT);
         boolean loaded = getTypeface(context, 0) != null;
-        Log.i(TAG, "rich-item selected=" + selected + " loaded=" + loaded
+        NezumiLog.i(Patch.CUSTOM_FONT, TAG, "rich-item selected=" + selected + " loaded=" + loaded
                 + " changed=" + (requested != original) + " applied=" + (actual == requested));
     }
 
@@ -123,7 +127,16 @@ public final class CustomFont extends Fragment {
         return NezumiPrefs.of(context).contains(FONT);
     }
 
+    /**
+     * Starts tracking the font for {@link RestartPrompt}: Zalo's font gate and the text caches are
+     * set up once per process, so a different font needs a restart. Safe to call more than once.
+     */
+    public static void trackForRestart(Context context) {
+        if (context != null) RestartPrompt.track(FONT, NezumiPrefs.of(context).getString(FONT, null));
+    }
+
     public static void enableSelectedFont(Context context, AtomicBoolean fontEnabled) {
+        trackForRestart(context);
         if (context != null && fontEnabled != null && isSelected(context)) {
             fontEnabled.set(true);
             if (context.getApplicationContext() instanceof android.app.Application) {
@@ -136,6 +149,7 @@ public final class CustomFont extends Fragment {
         SharedPreferences prefs = NezumiPrefs.of(context);
         String previous = prefs.getString(FONT, null);
         prefs.edit().remove(FONT).apply();
+        RestartPrompt.changed(FONT, null);
         synchronized (CustomFont.class) {
             cachedFont = null;
             cachedPath = null;
@@ -167,7 +181,8 @@ public final class CustomFont extends Fragment {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         try {
             startActivityForResult(intent, PICK_FONT);
-        } catch (ActivityNotFoundException ignored) {
+        } catch (ActivityNotFoundException failure) {
+            NezumiLog.w(Patch.CUSTOM_FONT, TAG, "no document picker for fonts", failure);
             Toast.makeText(getActivity(), "Cannot open font picker.", Toast.LENGTH_SHORT).show();
             getFragmentManager().beginTransaction().remove(this).commit();
         }
@@ -179,9 +194,9 @@ public final class CustomFont extends Fragment {
         if (resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
             try {
                 save(getActivity(), data.getData());
-                Toast.makeText(getActivity(), "Font saved. Restart Zalo to refresh text.", Toast.LENGTH_LONG).show();
                 if (onChanged != null) onChanged.run();
-            } catch (Exception ignored) {
+            } catch (Exception failure) {
+                NezumiLog.w(Patch.CUSTOM_FONT, TAG, "font import failed", failure);
                 Toast.makeText(getActivity(), "Could not load this font.", Toast.LENGTH_SHORT).show();
             }
         }
@@ -216,6 +231,7 @@ public final class CustomFont extends Fragment {
             SharedPreferences prefs = NezumiPrefs.of(context);
             String previous = prefs.getString(FONT, null);
             if (!prefs.edit().putString(FONT, file.getName()).commit()) throw new IllegalStateException("Font not saved");
+            RestartPrompt.changed(FONT, file.getName());
             synchronized (CustomFont.class) {
                 cachedFont = null;
                 cachedPath = null;

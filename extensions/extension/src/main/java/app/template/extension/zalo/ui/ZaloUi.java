@@ -1,15 +1,23 @@
 package app.template.extension.zalo.ui;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.util.Base64;
 import android.util.TypedValue;
@@ -18,14 +26,19 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.PathInterpolator;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
 
 import app.template.extension.zalo.appearance.CustomFont;
+import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 
 /** Zalo-styled view builders shared by Nezumi screens: rows, switches, icons, groups, pages. */
 public final class ZaloUi {
@@ -38,6 +51,12 @@ public final class ZaloUi {
     private static final int ROW_TITLE_KEY = 0x7E4E5A01;
 
     private static final int ROW_DIVIDER_KEY = 0x7E4E5A02;
+
+    private static final int ROW_ANIMATOR_KEY = 0x7E4E5A03;
+
+    private static final int CHILD_SLIDE_DP = 12;
+
+    private static final long CHILD_ANIMATION_MS = 200;
 
     private static final int HEADER_BLUE = 0xFF008DFA;
 
@@ -85,7 +104,8 @@ public final class ZaloUi {
         try {
             return color.resourceId != 0
                     ? context.getColorStateList(color.resourceId).getDefaultColor() : color.data;
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException failure) {
+            NezumiLog.swallowedOnce(Patch.CORE, "ZaloUi", "theme color unavailable, using fallback", failure);
             return fallback;
         }
     }
@@ -96,7 +116,8 @@ public final class ZaloUi {
         if (resourceId == 0) return fallback;
         try {
             return context.getColorStateList(resourceId).getDefaultColor();
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException failure) {
+            NezumiLog.swallowedOnce(Patch.CORE, "ZaloUi", "color " + name + " unavailable, using fallback", failure);
             return fallback;
         }
     }
@@ -133,7 +154,8 @@ public final class ZaloUi {
             Constructor<?> constructor = Class.forName("com.zing.zalo.ui.widget.RobotoTextView")
                     .getConstructor(Context.class);
             text = (TextView) constructor.newInstance(context);
-        } catch (ReflectiveOperationException | ClassCastException | SecurityException ignored) {
+        } catch (ReflectiveOperationException | ClassCastException | SecurityException failure) {
+            NezumiLog.swallowedOnce(Patch.CORE, "ZaloUi", "RobotoTextView unavailable, using TextView", failure);
             text = new TextView(context);
         }
         text.setText(value);
@@ -219,7 +241,8 @@ public final class ZaloUi {
             Drawable icon = new BitmapDrawable(context.getResources(), bitmap);
             icon.setColorFilter(BLUE, PorterDuff.Mode.SRC_IN);
             return icon;
-        } catch (Exception ignored) {
+        } catch (Exception failure) {
+            NezumiLog.swallowedOnce(Patch.CORE, "ZaloUi", "gear icon unavailable, using line icon", failure);
             return new LineIcon(BLUE, 0);
         }
     }
@@ -239,7 +262,148 @@ public final class ZaloUi {
     /** Settings row with a leading Zalo icon, a label and a trailing Zalo-style switch. */
     public static View toggleRow(LinearLayout list, Context context, String title, String icon, boolean checked,
             boolean darkMode, CompoundButton.OnCheckedChangeListener listener) {
-        View wrapper = row(context, title, zdsIcon(context, icon, darkMode), false, darkMode, null);
+        return switchRow(list, context, title, zdsIcon(context, icon, darkMode), checked, darkMode, listener);
+    }
+
+    /**
+     * Adds a container to {@code list} that links a parent row with its dependent rows: add the rows
+     * to it with {@link #toggleRow}. While more than one of its rows is visible, a blue bar runs down
+     * the left edge and the dividers between the linked rows are hidden (see {@link #trimGroupDividers}).
+     */
+    public static LinearLayout linkedRows(LinearLayout list, Context context, boolean darkMode) {
+        LinkedRows group = new LinkedRows(context, darkMode ? BLUE_DARK : BLUE);
+        list.addView(group, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return group;
+    }
+
+    /** Draws the 3dp link bar over its rows' left edge, inset 10dp, rounded on the right. */
+    private static final class LinkedRows extends LinearLayout {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path bar = new Path();
+        private final RectF bounds = new RectF();
+        private boolean linked;
+
+        LinkedRows(Context context, int color) {
+            super(context);
+            setOrientation(VERTICAL);
+            paint.setColor(color);
+        }
+
+        void setLinked(boolean value) {
+            if (linked == value) return;
+            linked = value;
+            invalidate();
+        }
+
+        @Override
+        protected void dispatchDraw(Canvas canvas) {
+            super.dispatchDraw(canvas);
+            int inset = dp(getContext(), 10);
+            if (!linked || getHeight() <= inset * 2) return;
+            float width = dp(getContext(), 3);
+            bounds.set(0, inset, width, getHeight() - inset);
+            bar.reset();
+            bar.addRoundRect(bounds, new float[] { 0, 0, width, width, width, width, 0, 0 }, Path.Direction.CW);
+            canvas.drawPath(bar, paint);
+        }
+    }
+
+    /**
+     * Shows or hides a dependent row (inside {@link #linkedRows} or directly in {@code list}). When
+     * animated, the row expands from zero height while fading in and its content slides down from
+     * under the row above; collapsing reverses that and ends with GONE. A running animation is
+     * cancelled and the new one starts from its current state. Dividers and the link bar are
+     * re-trimmed when the row appears and after it is gone, so the bar spans the row while it animates.
+     */
+    public static void setChildRowVisible(LinearLayout list, View row, boolean visible, boolean animate) {
+        Object running = row.getTag(ROW_ANIMATOR_KEY);
+        row.setTag(ROW_ANIMATOR_KEY, null);
+        if (running instanceof ValueAnimator) ((ValueAnimator) running).cancel();
+        boolean shown = row.getVisibility() == View.VISIBLE;
+        ViewGroup host = row.getParent() instanceof ViewGroup ? (ViewGroup) row.getParent() : list;
+        int width = host.getWidth() - host.getPaddingLeft() - host.getPaddingRight();
+        if (!animate || width <= 0 || !row.isAttachedToWindow() || (running == null && shown == visible)) {
+            settleChildRow(list, row, visible);
+            return;
+        }
+        float slide = -dp(row.getContext(), CHILD_SLIDE_DP);
+        ViewGroup.LayoutParams params = row.getLayoutParams();
+        int startHeight = shown ? (params.height >= 0 ? params.height : row.getHeight()) : 0;
+        float startAlpha = shown ? row.getAlpha() : 0f;
+        float startShift = shown ? childShift(row) : slide;
+        int endHeight = 0;
+        if (visible) {
+            row.setVisibility(View.VISIBLE);
+            trimGroupDividers(list);
+            row.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            endHeight = row.getMeasuredHeight();
+        }
+        float endAlpha = visible ? 1f : 0f;
+        float endShift = visible ? 0f : slide;
+        params.height = startHeight;
+        row.setLayoutParams(params);
+        row.setAlpha(startAlpha);
+        setChildShift(row, startShift);
+        int targetHeight = endHeight;
+        ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+        animator.setDuration(CHILD_ANIMATION_MS);
+        animator.setInterpolator(new PathInterpolator(0.4f, 0f, 0.2f, 1f));
+        animator.addUpdateListener(animation -> {
+            float fraction = (float) animation.getAnimatedValue();
+            ViewGroup.LayoutParams current = row.getLayoutParams();
+            current.height = Math.round(startHeight + (targetHeight - startHeight) * fraction);
+            row.setLayoutParams(current);
+            row.setAlpha(startAlpha + (endAlpha - startAlpha) * fraction);
+            setChildShift(row, startShift + (endShift - startShift) * fraction);
+        });
+        animator.addListener(new AnimatorListenerAdapter() {
+            private boolean cancelled;
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                cancelled = true;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                if (cancelled) return;
+                row.setTag(ROW_ANIMATOR_KEY, null);
+                settleChildRow(list, row, visible);
+            }
+        });
+        row.setTag(ROW_ANIMATOR_KEY, animator);
+        animator.start();
+    }
+
+    private static void settleChildRow(LinearLayout list, View row, boolean visible) {
+        ViewGroup.LayoutParams params = row.getLayoutParams();
+        if (params != null && params.height != ViewGroup.LayoutParams.WRAP_CONTENT) {
+            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            row.setLayoutParams(params);
+        }
+        row.setAlpha(1f);
+        setChildShift(row, 0f);
+        row.setVisibility(visible ? View.VISIBLE : View.GONE);
+        trimGroupDividers(list);
+    }
+
+    /** Slides the row's contents rather than the row, so the row's own bounds clip them under the row above. */
+    private static void setChildShift(View row, float shift) {
+        if (!(row instanceof ViewGroup)) return;
+        ViewGroup group = (ViewGroup) row;
+        for (int index = 0; index < group.getChildCount(); index++) group.getChildAt(index).setTranslationY(shift);
+    }
+
+    private static float childShift(View row) {
+        return row instanceof ViewGroup && ((ViewGroup) row).getChildCount() > 0
+            ? ((ViewGroup) row).getChildAt(0).getTranslationY() : 0f;
+    }
+
+    private static View switchRow(LinearLayout list, Context context, String title, Drawable icon, boolean checked,
+            boolean darkMode, CompoundButton.OnCheckedChangeListener listener) {
+        View wrapper = row(context, title, icon, false, darkMode, null);
         LinearLayout content = (LinearLayout) ((ViewGroup) wrapper).getChildAt(0);
         CompoundButton toggle = zaloSwitch(context, darkMode);
         toggle.setContentDescription(title);
@@ -262,7 +426,9 @@ public final class ZaloUi {
             int unspecified = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
             native_.measure(unspecified, unspecified);
             if (native_.getMeasuredWidth() > 0 && native_.getMeasuredHeight() > 0) return native_;
-        } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) { }
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
+            NezumiLog.swallowedOnce(Patch.CORE, "ZaloUi", "native switch unavailable, using ZaloToggle", failure);
+        }
         return new ZaloToggle(context, darkMode);
     }
 
@@ -276,7 +442,8 @@ public final class ZaloUi {
             icon = icon.mutate();
             icon.setTint(darkMode ? BLUE_DARK : BLUE);
             return icon;
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException failure) {
+            NezumiLog.swallowedOnce(Patch.CORE, "ZaloUi", "icon " + name + " unavailable", failure);
             return null;
         }
     }
@@ -286,11 +453,27 @@ public final class ZaloUi {
         return title instanceof TextView ? (TextView) title : findTextView(row);
     }
 
-    /** Hide the separator under the last visible row of each group, like Zalo's own lists. */
+    /**
+     * Hide the separator under the last visible row of each group, like Zalo's own lists. Rows inside
+     * {@link #linkedRows} count as rows of the list; while linked, the separators between them are hidden.
+     */
     public static void trimGroupDividers(LinearLayout list) {
+        List<View> children = new ArrayList<>();
+        List<LinkedRows> linkedGroups = new ArrayList<>();
+        for (int index = 0; index < list.getChildCount(); index++) {
+            View child = list.getChildAt(index);
+            if (!(child instanceof LinkedRows)) {
+                children.add(child);
+                continue;
+            }
+            LinkedRows group = (LinkedRows) child;
+            linkedGroups.add(group);
+            if (group.getVisibility() == View.GONE) continue;
+            for (int inner = 0; inner < group.getChildCount(); inner++) children.add(group.getChildAt(inner));
+        }
         View lastRow = null;
-        for (int index = 0; index <= list.getChildCount(); index++) {
-            View child = index < list.getChildCount() ? list.getChildAt(index) : null;
+        for (int index = 0; index <= children.size(); index++) {
+            View child = index < children.size() ? children.get(index) : null;
             if (child != null && child.getVisibility() == View.GONE) continue;
             Object divider = child == null ? null : child.getTag(ROW_DIVIDER_KEY);
             if (child != null && divider instanceof View) {
@@ -300,6 +483,19 @@ public final class ZaloUi {
             }
             if (lastRow != null) ((View) lastRow.getTag(ROW_DIVIDER_KEY)).setVisibility(View.GONE);
             lastRow = null;
+        }
+        for (LinkedRows group : linkedGroups) {
+            View previous = null;
+            int visibleRows = 0;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                View child = group.getChildAt(index);
+                if (child.getVisibility() == View.GONE) continue;
+                visibleRows++;
+                Object divider = previous == null ? null : previous.getTag(ROW_DIVIDER_KEY);
+                if (divider instanceof View) ((View) divider).setVisibility(View.GONE);
+                previous = child;
+            }
+            group.setLinked(group.getVisibility() != View.GONE && visibleRows > 1);
         }
     }
 
@@ -354,6 +550,109 @@ public final class ZaloUi {
             (window.getDecorView().getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE) & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         return page;
+    }
+
+    /**
+     * Zalo-styled two-button confirmation. Back, a tap outside and the negative button all run
+     * {@code onNegative}; exactly one of the two callbacks runs.
+     */
+    public static Dialog confirm(Context context, boolean darkMode, String title, String message,
+            String negative, String positive, Runnable onNegative, Runnable onPositive) {
+        Dialog dialog = new Dialog(context);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        boolean[] decided = { false };
+        LinearLayout box = new LinearLayout(context);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(context, 20), dp(context, 22), dp(context, 20), dp(context, 16));
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(darkMode ? sectionColor(context, true) : 0xFFFFFFFF);
+        background.setCornerRadius(dp(context, 12));
+        box.setBackground(background);
+        TextView heading = label(context, title, darkMode);
+        heading.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+        heading.setTypeface(android.graphics.Typeface.create(heading.getTypeface(), android.graphics.Typeface.BOLD));
+        box.addView(heading, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView body = label(context, message, darkMode);
+        body.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        body.setTextColor(darkMode ? 0xFFA3A9B1 : 0xFF5C6470);
+        body.setLineSpacing(0f, 1.2f);
+        LinearLayout.LayoutParams bodyParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        bodyParams.topMargin = dp(context, 8);
+        bodyParams.bottomMargin = dp(context, 18);
+        box.addView(body, bodyParams);
+        LinearLayout actions = new LinearLayout(context);
+        actions.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        TextView later = pill(context, negative, darkMode ? 0xFF34363A : 0xFFEAEDF0, textColor(context, darkMode), darkMode);
+        TextView now = pill(context, positive, darkMode ? BLUE_DARK : BLUE, 0xFFFFFFFF, darkMode);
+        actions.addView(later);
+        LinearLayout.LayoutParams nowParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        nowParams.leftMargin = dp(context, 8);
+        actions.addView(now, nowParams);
+        box.addView(actions);
+        later.setOnClickListener(view -> dialog.cancel());
+        now.setOnClickListener(view -> {
+            if (decided[0]) return;
+            decided[0] = true;
+            dialog.dismiss();
+            onPositive.run();
+        });
+        dialog.setOnCancelListener(view -> {
+            if (decided[0]) return;
+            decided[0] = true;
+            if (onNegative != null) onNegative.run();
+        });
+        dialog.setContentView(box);
+        Window window = dialog.getWindow();
+        window.setBackgroundDrawable(new ColorDrawable(0x00000000));
+        dialog.show();
+        int width = Math.min(context.getResources().getDisplayMetrics().widthPixels - dp(context, 48), dp(context, 320));
+        window.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
+        return dialog;
+    }
+
+    /** A tinted strip with an info icon, a message and one action button, for the top of a page. */
+    public static View banner(Context context, String message, String action, boolean darkMode, Runnable onAction) {
+        LinearLayout strip = new LinearLayout(context);
+        strip.setGravity(Gravity.CENTER_VERTICAL);
+        strip.setPadding(dp(context, 16), dp(context, 12), dp(context, 16), dp(context, 12));
+        strip.setBackgroundColor(darkMode ? 0xFF12253F : 0xFFE8F1FF);
+        Drawable icon = zdsIcon(context, "info_circle", darkMode);
+        if (icon != null) {
+            View leading = new View(context);
+            leading.setBackground(icon);
+            LinearLayout.LayoutParams leadingParams = new LinearLayout.LayoutParams(dp(context, 22), dp(context, 22));
+            leadingParams.rightMargin = dp(context, 12);
+            strip.addView(leading, leadingParams);
+        }
+        TextView text = label(context, message, darkMode);
+        text.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        text.setTextColor(darkMode ? 0xFFBCD6FF : 0xFF0B3D91);
+        strip.addView(text, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        TextView button = pill(context, action, darkMode ? BLUE_DARK : BLUE, 0xFFFFFFFF, darkMode);
+        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        buttonParams.leftMargin = dp(context, 12);
+        strip.addView(button, buttonParams);
+        button.setOnClickListener(view -> onAction.run());
+        return strip;
+    }
+
+    private static TextView pill(Context context, String value, int fill, int textColor, boolean darkMode) {
+        TextView pill = label(context, value, darkMode);
+        pill.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        pill.setTextColor(textColor);
+        pill.setGravity(Gravity.CENTER);
+        pill.setSingleLine(true);
+        pill.setPadding(dp(context, 16), dp(context, 9), dp(context, 16), dp(context, 9));
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(fill);
+        background.setCornerRadius(dp(context, 18));
+        pill.setBackground(background);
+        pill.setClickable(true);
+        return pill;
     }
 
     static int attrColor(Context context, String name, int fallback) {

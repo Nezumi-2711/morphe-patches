@@ -21,6 +21,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.settings.NezumiPrefs;
 
 public final class CustomSounds extends Fragment {
@@ -88,18 +90,20 @@ public final class CustomSounds extends Fragment {
                 int flags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
                 try {
                     context.grantUriPermission("android", sound, flags);
-                } catch (SecurityException ignored) {
+                } catch (SecurityException failure) {
+                    NezumiLog.swallowedOnce(Patch.CUSTOM_SOUNDS, "CustomSounds", "could not grant the sound to android", failure);
                 }
                 try {
                     context.grantUriPermission("com.android.systemui", sound, flags);
-                } catch (SecurityException ignored) {
+                } catch (SecurityException failure) {
+                    NezumiLog.swallowedOnce(Patch.CUSTOM_SOUNDS, "CustomSounds", "could not grant the sound to systemui", failure);
                 }
                 channel.setSound(sound, attributes);
                 manager.createNotificationChannel(channel);
             }
             return customId;
         } catch (Exception failure) {
-            android.util.Log.w("NezumiSounds", "Custom notification channel unavailable; using original");
+            NezumiLog.w(Patch.CUSTOM_SOUNDS, "CustomSounds", "Custom notification channel unavailable; using original");
             return channelId;
         }
     }
@@ -128,7 +132,7 @@ public final class CustomSounds extends Fragment {
                 player.setDataSource(file.getAbsolutePath());
                 return;
             } catch (IOException | RuntimeException failure) {
-                android.util.Log.w("NezumiSounds", "Custom sound unavailable; using original");
+                NezumiLog.w(Patch.CUSTOM_SOUNDS, "CustomSounds", "Custom sound unavailable; using original");
             }
         }
         player.setDataSource(context, original);
@@ -163,6 +167,7 @@ public final class CustomSounds extends Fragment {
         try {
             startActivityForResult(intent, PICK_SOUND);
         } catch (ActivityNotFoundException failure) {
+            NezumiLog.w(Patch.CUSTOM_SOUNDS, "CustomSounds", "no document picker for audio", failure);
             Toast.makeText(getActivity(), "Cannot open audio picker", Toast.LENGTH_SHORT).show();
             getFragmentManager().beginTransaction().remove(this).commit();
         }
@@ -177,6 +182,7 @@ public final class CustomSounds extends Fragment {
                 if (onChanged != null) onChanged.run();
                 Toast.makeText(getActivity(), "Sound saved", Toast.LENGTH_SHORT).show();
             } catch (Exception failure) {
+                NezumiLog.e(Patch.CUSTOM_SOUNDS, "CustomSounds", "picked audio file could not be saved", failure);
                 Toast.makeText(getActivity(), "Could not load this audio file", Toast.LENGTH_SHORT).show();
             }
         }
