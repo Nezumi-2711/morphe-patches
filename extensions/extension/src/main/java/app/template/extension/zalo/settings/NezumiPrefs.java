@@ -30,6 +30,8 @@ public final class NezumiPrefs {
     public static final String HIDE_ONLINE_STATUS = "hide_online_status";
     public static final String HIDE_DISCOVERY = "hide_discovery";
     public static final String CALL_RECORDING = "call_recording_button";
+    /** SAF tree URI of the chosen recordings folder; absent or empty means Music/ZaloRecordings. */
+    public static final String CALL_RECORDING_FOLDER = "call_recording_folder";
     public static final String TRUE_BLACK_CALL_SCREEN = "true_black_call_screen";
     /** "Detailed logging": info and warning lines go to the bug-log file too. Keeps the key of the old on/off toggle. */
     public static final String BUG_LOG_DETAILED = "bug_log_enabled";

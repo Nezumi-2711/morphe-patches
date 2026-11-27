@@ -28,7 +28,7 @@ import app.template.extension.zalo.buglog.NezumiLog;
 import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.shared.ZaloEnv;
 
-/** Turns the recorder's temporary WAV into an m4a in Music/ZaloRecordings (WAV copy on failure). */
+/** Turns the recorder's temporary WAV into an m4a in Music/ZaloRecordings or the chosen folder (WAV copy on failure). */
 final class RecordingSaver {
     private RecordingSaver() { }
 
@@ -71,6 +71,11 @@ final class RecordingSaver {
             return;
         }
         String base = fileBase(peerName, outgoing, when);
+        Uri tree = RecordingFolder.tree(context);
+        if (tree != null) {
+            saveToTree(context, tree, wav, info, base);
+            return;
+        }
         if (info != null) {
             try {
                 String name = base + ".m4a";
@@ -85,13 +90,62 @@ final class RecordingSaver {
         }
         try {
             String name = base + ".wav";
-            saveWavCopy(context, wav, name);
+            saveCopy(context, wav, name, "audio/x-wav");
             //noinspection ResultOfMethodCallIgnored
             wav.delete();
             CallRecorder.toast("Không chuyển được m4a, đã lưu WAV: " + name);
         } catch (Throwable failure) {
             NezumiLog.e(Patch.CALL_RECORDING, TAG, "wav copy failed", failure);
             CallRecorder.toast("Lưu bản ghi thất bại (giữ tại " + wav.getAbsolutePath() + ")");
+        }
+    }
+
+    /**
+     * Encodes into the cache first, then copies into the chosen folder. Any failure there saves the
+     * same file to the default folder instead; the folder choice is kept.
+     */
+    private static void saveToTree(Context context, Uri tree, File wav, Wav info, String base) {
+        File encoded = null;
+        if (info != null) {
+            try {
+                encoded = File.createTempFile("nezumi-recording-", ".m4a", context.getCacheDir());
+                encode(wav, info, new MediaMuxer(encoded.getAbsolutePath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4));
+            } catch (Throwable failure) {
+                NezumiLog.e(Patch.CALL_RECORDING, TAG, "m4a encode failed, falling back to wav", failure);
+                if (encoded != null) //noinspection ResultOfMethodCallIgnored
+                    encoded.delete();
+                encoded = null;
+            }
+        }
+        boolean m4a = encoded != null;
+        File source = m4a ? encoded : wav;
+        String name = base + (m4a ? ".m4a" : ".wav");
+        try {
+            RecordingFolder.write(context, tree, source, name,
+                m4a ? RecordingFolder.mimeFor("m4a", "audio/mp4") : RecordingFolder.mimeFor("wav", "audio/x-wav"));
+            deleteAll(encoded, wav);
+            CallRecorder.toast(m4a ? "Đã lưu: " + name : "Không chuyển được m4a, đã lưu WAV: " + name);
+            return;
+        } catch (Throwable failure) {
+            NezumiLog.e(Patch.CALL_RECORDING, TAG, "writing to the chosen folder failed, using the default folder", failure);
+        }
+        try {
+            saveCopy(context, source, name, m4a ? "audio/mp4" : "audio/x-wav");
+            deleteAll(encoded, wav);
+            boolean vietnamese = ZaloEnv.isVietnamese(Patch.CALL_RECORDING, context);
+            CallRecorder.toast((vietnamese ? "Không ghi được vào thư mục đã chọn, đã lưu vào "
+                : "Could not write to the chosen folder, saved to ") + RELATIVE_PATH + ": " + name);
+        } catch (Throwable failure) {
+            NezumiLog.e(Patch.CALL_RECORDING, TAG, "default folder copy failed", failure);
+            deleteAll(encoded);
+            CallRecorder.toast("Lưu bản ghi thất bại (giữ tại " + wav.getAbsolutePath() + ")");
+        }
+    }
+
+    private static void deleteAll(File... files) {
+        for (File file : files) {
+            if (file != null) //noinspection ResultOfMethodCallIgnored
+                file.delete();
         }
     }
 
@@ -216,11 +270,11 @@ final class RecordingSaver {
         target.descriptor = null;
     }
 
-    private static void saveWavCopy(Context context, File wav, String name) throws IOException {
-        Target target = open(context, name, "audio/x-wav");
+    private static void saveCopy(Context context, File source, String name, String mime) throws IOException {
+        Target target = open(context, name, mime);
         try {
             ContentResolver resolver = context.getContentResolver();
-            try (InputStream in = new FileInputStream(wav);
+            try (InputStream in = new FileInputStream(source);
                  OutputStream out = target.uri != null ? resolver.openOutputStream(target.uri, "w")
                      : new java.io.FileOutputStream(target.file)) {
                 byte[] buffer = new byte[64 * 1024];

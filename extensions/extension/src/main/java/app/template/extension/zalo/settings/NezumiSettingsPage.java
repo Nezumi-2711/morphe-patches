@@ -21,6 +21,7 @@ import app.template.extension.zalo.buglog.BugLogExport;
 import app.template.extension.zalo.buglog.NezumiLog;
 import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.call.CallRecorder;
+import app.template.extension.zalo.call.RecordingFolder;
 import app.template.extension.zalo.chat.OnlineStatus;
 import app.template.extension.zalo.messages.MessagesTab;
 import app.template.extension.zalo.messages.OfficialAccounts;
@@ -311,6 +312,36 @@ public final class NezumiSettingsPage {
             ZaloUi.toggleRow(list, context, vietnamese ? "Hiện nút ghi âm" : "Show record button", "call",
                 prefs.getBoolean(NezumiPrefs.CALL_RECORDING, true), darkMode,
                 (button, checked) -> prefs.edit().putBoolean(NezumiPrefs.CALL_RECORDING, checked).apply());
+            String saveFolderTitle = vietnamese ? "Thư mục lưu bản ghi" : "Recordings folder";
+            View saveFolder = ZaloUi.row(context, saveFolderTitle, ZaloUi.zdsIcon(context, "my_documents", darkMode),
+                true, darkMode, null);
+            TextView saveFolderLabel = ZaloUi.rowTitle(saveFolder);
+            View resetFolder = ZaloUi.row(context, vietnamese ? "Dùng thư mục mặc định" : "Use default folder",
+                ZaloUi.zdsIcon(context, "auto_counter_clockwise", darkMode), false, darkMode, null);
+            Runnable updateFolder = () -> {
+                String custom = RecordingFolder.describe(context);
+                String note = custom != null ? custom
+                    : "Music/ZaloRecordings" + (vietnamese ? " (mặc định)" : " (default)");
+                addRowNote(saveFolderLabel, saveFolderTitle, note, custom != null
+                    ? (darkMode ? 0xFF3D8BFF : 0xFF0068FF) : (darkMode ? 0xFFA3A9B1 : 0xFF6B7280));
+                resetFolder.setVisibility(custom != null ? View.VISIBLE : View.GONE);
+                ZaloUi.trimGroupDividers(list);
+            };
+            saveFolder.setOnClickListener(view -> {
+                if (!RecordingFolder.pick(context, updateFolder)) {
+                    Toast.makeText(context, vietnamese ? "Không thể mở trình chọn thư mục" : "Cannot open folder picker",
+                        Toast.LENGTH_SHORT).show();
+                }
+            });
+            resetFolder.setOnClickListener(view -> {
+                RecordingFolder.reset(context);
+                updateFolder.run();
+                Toast.makeText(context, vietnamese ? "Đã quay về thư mục mặc định" : "Back to the default folder",
+                    Toast.LENGTH_SHORT).show();
+            });
+            list.addView(saveFolder);
+            list.addView(resetFolder);
+            updateFolder.run();
             View folder = ZaloUi.row(context, vietnamese ? "Mở thư mục bản ghi" : "Open recordings folder",
                 ZaloUi.zdsIcon(context, "grid_view", darkMode), true, darkMode, null);
             folder.setOnClickListener(view -> CallRecorder.openFolder(context));
