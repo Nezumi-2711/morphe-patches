@@ -1,3 +1,9 @@
+## [1.8.0-dev.6](https://github.com/Nezumi-2711/morphe-patches/compare/v1.8.0-dev.5...v1.8.0-dev.6) (2026-11-27)
+
+### ✨ New Features
+
+* **zalo:** add option to hide the Mark as read toolbar button ([f6de137](https://github.com/Nezumi-2711/morphe-patches/commit/f6de137177df8877e9473674594737ce1b998e10)), closes [#54](https://github.com/Nezumi-2711/morphe-patches/issues/54)
+
 ## [1.8.0-dev.5](https://github.com/Nezumi-2711/morphe-patches/compare/v1.8.0-dev.4...v1.8.0-dev.5) (2026-11-27)
 
 ### 🐛 Bug Fixes
