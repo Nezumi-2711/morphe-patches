@@ -202,13 +202,17 @@ final class RecordingSaver {
             if (target.uri != null) context.getContentResolver().delete(target.uri, null, null);
             if (target.file != null) //noinspection ResultOfMethodCallIgnored
                 target.file.delete();
-        } catch (RuntimeException ignored) { }
+        } catch (RuntimeException failure) {
+            NezumiLog.swallowed(Patch.CALL_RECORDING, TAG, "discarding the unfinished recording failed", failure);
+        }
     }
 
     private static void closeQuietly(Target target) {
         try {
             if (target.descriptor != null) target.descriptor.close();
-        } catch (IOException ignored) { }
+        } catch (IOException failure) {
+            NezumiLog.swallowed(Patch.CALL_RECORDING, TAG, "closing the recording file failed", failure);
+        }
         target.descriptor = null;
     }
 
@@ -311,11 +315,15 @@ final class RecordingSaver {
         } finally {
             try {
                 if (codecStarted) codec.stop();
-            } catch (RuntimeException ignored) { }
+            } catch (RuntimeException failure) {
+                NezumiLog.swallowed(Patch.CALL_RECORDING, TAG, "stopping the audio encoder failed", failure);
+            }
             codec.release();
             try {
                 if (muxerStarted) muxer.stop();
-            } catch (RuntimeException ignored) { }
+            } catch (RuntimeException failure) {
+                NezumiLog.swallowed(Patch.CALL_RECORDING, TAG, "stopping the muxer failed", failure);
+            }
             muxer.release();
         }
     }

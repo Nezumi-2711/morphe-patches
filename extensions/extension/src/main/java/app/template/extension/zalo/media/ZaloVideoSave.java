@@ -216,8 +216,9 @@ public final class ZaloVideoSave {
                 field.setAccessible(true);
                 Object handler = field.get(sheet);
                 if (handler != null) return handler;
-            } catch (NoSuchFieldException ignored) {
-                // try superclass
+            } catch (NoSuchFieldException notHere) {
+                // Expected while walking up the hierarchy; logcat only.
+                NezumiLog.d(Patch.SAVE_MEDIA, TAG, "Q1 not declared on " + c.getName() + ", trying superclass");
             }
         }
         return null;
@@ -374,8 +375,9 @@ public final class ZaloVideoSave {
             @Override public void run() {
                 try {
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-                } catch (Throwable ignored) {
-                    // never crash the host
+                } catch (Throwable failure) {
+                    // Never crash the host.
+                    NezumiLog.swallowedOnce(Patch.SAVE_MEDIA, TAG, "toast failed", failure);
                 }
             }
         });

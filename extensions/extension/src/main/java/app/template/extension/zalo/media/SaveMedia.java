@@ -142,6 +142,7 @@ public final class SaveMedia {
             Object value = field(target, name);
             return value instanceof String ? (String) value : null;
         } catch (Throwable failure) {
+            NezumiLog.swallowedOnce(Patch.SAVE_MEDIA, TAG, "string field " + name + " unavailable", failure);
             return null;
         }
     }
@@ -152,8 +153,9 @@ public final class SaveMedia {
                 Field field = c.getDeclaredField(name);
                 field.setAccessible(true);
                 return field.get(target);
-            } catch (NoSuchFieldException ignored) {
-                // try superclass
+            } catch (NoSuchFieldException notHere) {
+                // Expected while walking up the hierarchy; logcat only.
+                NezumiLog.d(Patch.SAVE_MEDIA, TAG, name + " not declared on " + c.getName() + ", trying superclass");
             }
         }
         throw new NoSuchFieldException(name);

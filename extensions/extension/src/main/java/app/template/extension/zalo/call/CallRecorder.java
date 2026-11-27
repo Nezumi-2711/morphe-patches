@@ -200,6 +200,7 @@ public final class CallRecorder {
             Object value = model.getClass().getMethod(CALL_MODEL_NAME_FALLBACK).invoke(model);
             return value instanceof String ? (String) value : "";
         } catch (Throwable failure) {
+            NezumiLog.swallowedOnce(Patch.CALL_RECORDING, TAG, "caller name unavailable, recording unnamed", failure);
             return "";
         }
     }

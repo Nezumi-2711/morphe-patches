@@ -232,7 +232,8 @@ public final class NezumiLog {
      * otherwise repeat the same stack trace thousands of times and rotate the useful lines away.
      */
     public static void swallowedOnce(Patch patch, String tag, String message, Throwable failure) {
-        if (off) return;
+        // Hot paths call this: skip building the key when nothing can be recorded.
+        if (off || (store == null && !BUG_LOG_APPLIED)) return;
         if (SEEN.size() < 512 && SEEN.add(patch.id + '\u0000' + tag + '\u0000' + message)) {
             file('W', patch, tag, message + " (further occurrences suppressed)", failure);
         }

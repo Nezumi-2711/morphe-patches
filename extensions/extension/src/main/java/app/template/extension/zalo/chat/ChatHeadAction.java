@@ -97,6 +97,7 @@ public final class ChatHeadAction {
             if (!open(adapter)) showUnavailable();
             return true;
         } catch (NoSuchFieldException error) {
+            NezumiLog.swallowedOnce(Patch.CHAT_HEADS_INSTEAD_OF_ANDROID_BUBBLES, "ChatHeadAction", "chat info option has no id field (b)", error);
             return false;
         } catch (ReflectiveOperationException | RuntimeException error) {
             NezumiLog.w(Patch.CHAT_HEADS_INSTEAD_OF_ANDROID_BUBBLES, "ChatHeadAction", "Unable to handle chat head option", error);

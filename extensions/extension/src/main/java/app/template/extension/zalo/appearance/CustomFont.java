@@ -169,7 +169,8 @@ public final class CustomFont extends Fragment {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         try {
             startActivityForResult(intent, PICK_FONT);
-        } catch (ActivityNotFoundException ignored) {
+        } catch (ActivityNotFoundException failure) {
+            NezumiLog.w(Patch.CUSTOM_FONT, TAG, "no document picker for fonts", failure);
             Toast.makeText(getActivity(), "Cannot open font picker.", Toast.LENGTH_SHORT).show();
             getFragmentManager().beginTransaction().remove(this).commit();
         }

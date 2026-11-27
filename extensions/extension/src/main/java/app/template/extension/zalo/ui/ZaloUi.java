@@ -87,7 +87,8 @@ public final class ZaloUi {
         try {
             return color.resourceId != 0
                     ? context.getColorStateList(color.resourceId).getDefaultColor() : color.data;
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException failure) {
+            NezumiLog.swallowedOnce(Patch.CORE, "ZaloUi", "theme color unavailable, using fallback", failure);
             return fallback;
         }
     }
@@ -98,7 +99,8 @@ public final class ZaloUi {
         if (resourceId == 0) return fallback;
         try {
             return context.getColorStateList(resourceId).getDefaultColor();
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException failure) {
+            NezumiLog.swallowedOnce(Patch.CORE, "ZaloUi", "color " + name + " unavailable, using fallback", failure);
             return fallback;
         }
     }
@@ -282,7 +284,8 @@ public final class ZaloUi {
             icon = icon.mutate();
             icon.setTint(darkMode ? BLUE_DARK : BLUE);
             return icon;
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException failure) {
+            NezumiLog.swallowedOnce(Patch.CORE, "ZaloUi", "icon " + name + " unavailable", failure);
             return null;
         }
     }

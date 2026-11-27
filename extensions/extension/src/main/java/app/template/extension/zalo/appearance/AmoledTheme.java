@@ -7,6 +7,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.settings.NezumiPrefs;
 
 /**
@@ -63,8 +65,9 @@ public final class AmoledTheme {
             int index = background == null ? 0 : root.indexOfChild(background) + 1; // -1 -> 0
             root.addView(scrim, index, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        } catch (Exception ignored) {
+        } catch (Exception failure) {
             // Never break the call screen.
+            NezumiLog.swallowedOnce(Patch.AMOLED_DARK_THEME, "AmoledTheme", "call screen scrim failed", failure);
         }
     }
 

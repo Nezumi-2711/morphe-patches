@@ -107,7 +107,8 @@ final class HlsDownloader {
                 String bandwidth = attr(pendingAttrs, "BANDWIDTH");
                 try {
                     variant.bandwidth = bandwidth == null ? 0 : Long.parseLong(bandwidth);
-                } catch (NumberFormatException ignored) {
+                } catch (NumberFormatException failure) {
+                    NezumiLog.swallowedOnce(Patch.SAVE_MEDIA, TAG, "HLS variant BANDWIDTH not a number, treating as 0", failure);
                     variant.bandwidth = 0;
                 }
                 String group = attr(pendingAttrs, "AUDIO");
@@ -145,7 +146,8 @@ final class HlsDownloader {
                 if (line.startsWith("#EXT-X-MEDIA-SEQUENCE:")) {
                     try {
                         sequence = Long.parseLong(line.substring("#EXT-X-MEDIA-SEQUENCE:".length()).trim());
-                    } catch (NumberFormatException ignored) {
+                    } catch (NumberFormatException failure) {
+                        NezumiLog.swallowedOnce(Patch.SAVE_MEDIA, TAG, "HLS media sequence not a number, starting at 0", failure);
                         sequence = 0;
                     }
                 } else if (line.startsWith("#EXT-X-KEY:")) {
@@ -431,6 +433,7 @@ final class HlsDownloader {
         try {
             return new URL(url).getHost().toLowerCase(Locale.US);
         } catch (IOException failure) {
+            NezumiLog.swallowedOnce(Patch.SAVE_MEDIA, TAG, "unparseable media URL host", failure);
             return "?";
         }
     }

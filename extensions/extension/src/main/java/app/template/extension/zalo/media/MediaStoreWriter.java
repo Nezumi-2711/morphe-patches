@@ -14,6 +14,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import app.template.extension.zalo.buglog.NezumiLog;
+import app.template.extension.zalo.buglog.Patch;
+
 /** Writes a video (Movies/Zalo) or a photo (Pictures/Zalo) straight into the shared gallery. */
 final class MediaStoreWriter {
     private MediaStoreWriter() { }
@@ -45,8 +48,9 @@ final class MediaStoreWriter {
             } catch (IOException | RuntimeException failure) {
                 try {
                     resolver.delete(uri, null, null);
-                } catch (RuntimeException ignored) {
-                    // best effort cleanup
+                } catch (RuntimeException cleanup) {
+                    // Best effort: the original failure is what the caller reports.
+                    NezumiLog.swallowed(Patch.SAVE_MEDIA, "MediaStoreWriter", "removing the pending MediaStore entry failed", cleanup);
                 }
                 throw failure;
             }
@@ -90,8 +94,9 @@ final class MediaStoreWriter {
             } catch (IOException | RuntimeException failure) {
                 try {
                     resolver.delete(uri, null, null);
-                } catch (RuntimeException ignored) {
-                    // best effort cleanup
+                } catch (RuntimeException cleanup) {
+                    // Best effort: the original failure is what the caller reports.
+                    NezumiLog.swallowed(Patch.SAVE_MEDIA, "MediaStoreWriter", "removing the pending MediaStore entry failed", cleanup);
                 }
                 throw failure;
             }

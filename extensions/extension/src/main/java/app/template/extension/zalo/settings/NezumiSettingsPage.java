@@ -152,6 +152,7 @@ public final class NezumiSettingsPage {
                     }
                     OnlineStatus.publishOnlineState(103);
                 } catch (LinkageError | RuntimeException failure) {
+                    NezumiLog.e(Patch.VIEW_ONLINE_STATUS_PRIVATELY, "NezumiSettingsPage", "online status toggle failed, reverted", failure);
                     OnlineStatus.applyOriginalOnlineSharing(originalSharing);
                     prefs.edit().putBoolean(NezumiPrefs.HIDE_ONLINE_STATUS, !checked).apply();
                     button.setChecked(!checked);

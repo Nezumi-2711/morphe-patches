@@ -146,8 +146,9 @@ public final class DriveTokenRecovery {
             } else {
                 NezumiLog.w(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, message.toString(), failure);
             }
-        } catch (Throwable ignored) {
+        } catch (Throwable diagnostics) {
             // Diagnostics must never change how Zalo handles the failure.
+            NezumiLog.swallowedOnce(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "token failure diagnostics failed", diagnostics);
         }
     }
 
@@ -178,6 +179,7 @@ public final class DriveTokenRecovery {
             }
             return Boolean.TRUE.equals(method.invoke(null, context)) ? "gms-api" : "legacy-bind";
         } catch (Throwable failure) {
+            NezumiLog.swallowedOnce(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "token path check unavailable", failure);
             return "unknown";
         }
     }
@@ -211,6 +213,7 @@ public final class DriveTokenRecovery {
                 notifyConsentNeeded(intentField(result));
             }
         } catch (InterruptedException e) {
+            NezumiLog.w(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "Drive token retry interrupted");
             Thread.currentThread().interrupt();
         } catch (RuntimeException | ReflectiveOperationException e) {
             NezumiLog.w(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "Drive token recovery skipped", e);
@@ -227,16 +230,18 @@ public final class DriveTokenRecovery {
                 NezumiLog.w(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "Drive token refresh still failing after " + retries + " retries (state " + state + ")"
                     + (isMainThread() ? " [main thread, not retried]" : "") + "; " + deviceContext());
             }
-        } catch (Throwable ignored) {
+        } catch (Throwable failure) {
             // Diagnostics must never affect the refresh result.
+            NezumiLog.swallowedOnce(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "refresh outcome diagnostics failed", failure);
         }
     }
 
     private static void logQuietly(String message) {
         try {
             NezumiLog.w(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, message);
-        } catch (Throwable ignored) {
+        } catch (Throwable failure) {
             // Diagnostics must never affect the refresh result.
+            NezumiLog.swallowedOnce(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "retry diagnostics failed", failure);
         }
     }
 
@@ -251,6 +256,7 @@ public final class DriveTokenRecovery {
             ActivityManager manager = context.getSystemService(ActivityManager.class);
             out.append(manager == null || Build.VERSION.SDK_INT < 28 ? "unknown" : manager.isBackgroundRestricted());
         } catch (Throwable failure) {
+            NezumiLog.swallowedOnce(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "background restriction unavailable", failure);
             out.append("unknown");
         }
         out.append("; importance=");
@@ -260,6 +266,7 @@ public final class DriveTokenRecovery {
             out.append(info.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
                 ? "foreground" : "background").append(" (").append(info.importance).append(')');
         } catch (Throwable failure) {
+            NezumiLog.swallowedOnce(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "process importance unavailable", failure);
             out.append("unknown");
         }
         out.append("; microG=").append(packageState(context, MICROG_PACKAGE, false));
@@ -278,8 +285,10 @@ public final class DriveTokenRecovery {
             return (caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ? "internet" : "no-internet")
                 + (caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) ? ",validated" : ",unvalidated");
         } catch (SecurityException failure) {
+            NezumiLog.swallowedOnce(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "network state needs ACCESS_NETWORK_STATE", failure);
             return "no-permission";
         } catch (Throwable failure) {
+            NezumiLog.swallowedOnce(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "network state unavailable", failure);
             return "unknown";
         }
     }
@@ -293,8 +302,11 @@ public final class DriveTokenRecovery {
                 : info.versionName;
             return (app == null || app.enabled ? "enabled" : "disabled") + " " + version;
         } catch (PackageManager.NameNotFoundException failure) {
+            // An answer, not a failure: the package is not installed.
+            NezumiLog.d(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, packageName + " not installed");
             return "missing";
         } catch (Throwable failure) {
+            NezumiLog.swallowedOnce(Patch.DRIVE_BACKUP_VIA_MICROG, TAG, "package state of " + packageName + " unavailable", failure);
             return "unknown";
         }
     }

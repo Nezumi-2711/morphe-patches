@@ -203,7 +203,8 @@ public final class PostVideoSave {
     private static Object fieldOrNull(Object target, String name) {
         try {
             return target.getClass().getField(name).get(target);
-        } catch (Throwable ignored) {
+        } catch (Throwable failure) {
+            NezumiLog.swallowedOnce(Patch.SAVE_MEDIA, TAG, "post field " + name + " unavailable", failure);
             return null;
         }
     }
