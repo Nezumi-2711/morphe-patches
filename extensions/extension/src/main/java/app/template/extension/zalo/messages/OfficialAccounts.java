@@ -39,13 +39,7 @@ public final class OfficialAccounts {
         synchronized (OA_LOCK) {
             OA_ATTEMPTS.clear();
         }
-        try {
-            // MessageManager singleton p8g.w(); M() reschedules the tab message list rebuild.
-            Object repository = Class.forName("p8g").getMethod("w").invoke(null);
-            repository.getClass().getMethod("M").invoke(repository);
-        } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
-            NezumiLog.w(Patch.HIDE_OA_ACCOUNTS_IN_MESSAGES, "OfficialAccounts", "Messages refresh unavailable", failure);
-        }
+        MessagesTab.refreshList(Patch.HIDE_OA_ACCOUNTS_IN_MESSAGES);
     }
 
     private static boolean hasOfficialFlag(Object profile) {

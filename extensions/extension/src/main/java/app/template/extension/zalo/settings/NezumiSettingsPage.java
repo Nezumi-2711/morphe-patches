@@ -22,6 +22,7 @@ import app.template.extension.zalo.buglog.NezumiLog;
 import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.call.CallRecorder;
 import app.template.extension.zalo.chat.OnlineStatus;
+import app.template.extension.zalo.messages.MessagesTab;
 import app.template.extension.zalo.messages.OfficialAccounts;
 import app.template.extension.zalo.navigation.DiscoveryTab;
 import app.template.extension.zalo.shared.ZaloEnv;
@@ -222,11 +223,17 @@ public final class NezumiSettingsPage {
         }
         if ((features & FEATURE_MEDIA_BOX) != 0) {
             ZaloUi.toggleRow(list, context, mediaBoxLabel, "photo", prefs.getBoolean(NezumiPrefs.HIDE_MEDIA_BOX, false), darkMode,
-                (button, checked) -> prefs.edit().putBoolean(NezumiPrefs.HIDE_MEDIA_BOX, checked).apply());
+                (button, checked) -> {
+                prefs.edit().putBoolean(NezumiPrefs.HIDE_MEDIA_BOX, checked).apply();
+                MessagesTab.refreshList(Patch.HIDE_MEDIA_BOX_IN_MESSAGES);
+            });
         }
         if ((features & FEATURE_BUSINESS_BOX) != 0) {
             ZaloUi.toggleRow(list, context, businessBoxLabel, "business_suite", prefs.getBoolean(NezumiPrefs.HIDE_BUSINESS_BOX, false),
-                darkMode, (button, checked) -> prefs.edit().putBoolean(NezumiPrefs.HIDE_BUSINESS_BOX, checked).apply());
+                darkMode, (button, checked) -> {
+                prefs.edit().putBoolean(NezumiPrefs.HIDE_BUSINESS_BOX, checked).apply();
+                MessagesTab.refreshList(Patch.HIDE_BUSINESS_BOX_IN_MESSAGES);
+            });
         }
         if ((features & FEATURE_OA_MESSAGES) != 0) {
             ZaloUi.toggleRow(list, context, oaMessagesLabel, "hide", prefs.getBoolean(NezumiPrefs.HIDE_OA_MESSAGES, true), darkMode,
@@ -236,7 +243,10 @@ public final class NezumiSettingsPage {
         }
         if ((features & FEATURE_MESSAGE_ADS) != 0) {
             ZaloUi.toggleRow(list, context, messageAdsLabel, "chat_block", prefs.getBoolean(NezumiPrefs.HIDE_MESSAGE_ADS, false),
-                darkMode, (button, checked) -> prefs.edit().putBoolean(NezumiPrefs.HIDE_MESSAGE_ADS, checked).apply());
+                darkMode, (button, checked) -> {
+                prefs.edit().putBoolean(NezumiPrefs.HIDE_MESSAGE_ADS, checked).apply();
+                MessagesTab.refreshList(Patch.HIDE_ADS_IN_MESSAGES);
+            });
         }
         if ((features & FEATURE_CUSTOM_FONT) != 0) {
             ZaloUi.addGroup(list, context, vietnamese ? "Giao diện" : "Appearance", darkMode);
