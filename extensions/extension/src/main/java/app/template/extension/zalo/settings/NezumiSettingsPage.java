@@ -286,11 +286,22 @@ public final class NezumiSettingsPage {
 
     private static void addBugLogRows(LinearLayout list, Context context, boolean darkMode, boolean vietnamese) {
         ZaloUi.addGroup(list, context, vietnamese ? "Gỡ lỗi" : "Debugging", darkMode);
-        ZaloUi.toggleRow(list, context, vietnamese ? "Ghi log lỗi" : "Record bug log", "warning",
-            NezumiLog.isEnabled(), darkMode, (button, checked) -> {
-                if (NezumiLog.isEnabled() == checked) return;
-                NezumiLog.setEnabled(context, checked);
+        String detailedLabel = vietnamese ? "Ghi log chi tiết" : "Detailed logging";
+        String detailedNote = vietnamese ? "Lỗi và sự cố luôn được ghi lại" : "Errors and crashes are always recorded";
+        View detailed = ZaloUi.toggleRow(list, context, detailedLabel, "warning",
+            NezumiLog.isDetailed(), darkMode, (button, checked) -> {
+                if (NezumiLog.isDetailed() == checked) return;
+                NezumiLog.setDetailed(context, checked);
             });
+        addRowNote(ZaloUi.rowTitle(detailed), detailedLabel, detailedNote);
+        String offLabel = vietnamese ? "Tắt hoàn toàn log lỗi" : "Turn off bug log completely";
+        String offNote = vietnamese ? "Không ghi lại gì, kể cả sự cố" : "Nothing is recorded, not even crashes";
+        View off = ZaloUi.toggleRow(list, context, offLabel, "hide",
+            NezumiLog.isOff(), darkMode, (button, checked) -> {
+                if (NezumiLog.isOff() == checked) return;
+                NezumiLog.setOff(context, checked);
+            });
+        addRowNote(ZaloUi.rowTitle(off), offLabel, offNote);
         String exportTitle = vietnamese ? "Xuất log" : "Export log";
         View export = ZaloUi.row(context, exportTitle, ZaloUi.zdsIcon(context, "download", darkMode), true, darkMode, null);
         TextView exportLabel = ZaloUi.rowTitle(export);

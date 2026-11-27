@@ -21,20 +21,32 @@ import java.util.TreeMap;
 import app.template.extension.zalo.settings.NezumiPrefs;
 
 /**
- * The one logger every Nezumi extension uses. Every call goes to logcat as before; when the
- * "Bug log" patch is applied and the user turned bug logging on in Nezumi's Settings, I/W/E lines
- * are also redacted and appended to a rotating file under {@code files/nezumi_logs/} that the user
- * can export and send to the developer. Without the patch, or with the toggle off, the file side
- * is a no-op.
+ * The one logger every Nezumi extension uses. Every call goes to logcat; when the "Bug log" patch
+ * is applied, lines are also redacted and appended to a rotating file under
+ * {@code files/nezumi_logs/} that the user can export and send to the developer. Nothing leaves
+ * the device on its own.
+ *
+ * <p>Errors, crashes and ANR/exit reasons are always recorded. Info and warning lines go to the
+ * file only with "Detailed logging" on; otherwise the last {@link RingBuffer#CAPACITY} of them
+ * are kept in memory and written out on a crash or an export, so the lead-up to a failure is not
+ * lost. "Turn off bug log completely" records nothing. Without the patch, the file side is a no-op.
  */
 public final class NezumiLog {
     private NezumiLog() { }
 
     private static volatile Context appContext;
     private static volatile LogStore store;
-    private static volatile boolean enabled;
+    /** Info/warning lines go to the file (otherwise to {@link #RING}). */
+    private static volatile boolean detailed;
+    /** Nothing is recorded, not even errors and crashes. */
+    private static volatile boolean off;
     private static volatile boolean mainProcess;
     private static volatile String processName;
+
+    /** I/W lines while detailed logging is off. */
+    private static final RingBuffer RING = new RingBuffer();
+    /** Lines logged before {@link #install} (hooks in early class initialisers), replayed once the store exists. */
+    private static final RingBuffer EARLY = new RingBuffer(64, RingBuffer.MAX_LINE_CHARS);
 
     /** Replaced by the Bug log patch with the patch-bundle version the APK was built from. */
     static String bundleVersion() {
@@ -56,6 +68,9 @@ public final class NezumiLog {
     static String touchedMethods() {
         return "";
     }
+
+    /** False when the Bug log patch is not applied (nothing baked): then nothing is ever buffered for a store. */
+    private static final boolean BUG_LOG_APPLIED = !appliedPatches().isEmpty();
 
     private static volatile Attribution attribution;
 
@@ -87,8 +102,12 @@ public final class NezumiLog {
             mainProcess = processName == null || processName.equals(context.getPackageName());
             String suffix = mainProcess || processName == null || !processName.contains(":")
                 ? "" : "-" + processName.substring(processName.indexOf(':') + 1).replaceAll("[^A-Za-z0-9_]", "_");
-            store = new LogStore(new File(context.getFilesDir(), LogStore.DIR), "nezumi" + suffix);
-            enabled = NezumiPrefs.bool(context, NezumiPrefs.BUG_LOG, false);
+            detailed = NezumiPrefs.bool(context, NezumiPrefs.BUG_LOG_DETAILED, false);
+            off = NezumiPrefs.bool(context, NezumiPrefs.BUG_LOG_OFF, false);
+            LogStore created = new LogStore(new File(context.getFilesDir(), LogStore.DIR), "nezumi" + suffix);
+            if (!off) created.startSession(NezumiLog::sessionHeader);
+            store = created;
+            replayEarly(created);
             CrashCapture.ensureInstalled();
             if (context instanceof Application) {
                 ((Application) context).registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
@@ -101,40 +120,62 @@ public final class NezumiLog {
                     @Override public void onActivityDestroyed(Activity activity) { }
                 });
             }
-            if (enabled) {
-                store.startSession(NezumiLog::sessionHeader);
-                if (mainProcess) ExitReasons.recordAsync(context);
-            }
+            if (!off && mainProcess) ExitReasons.recordAsync(context);
             hit(Patch.BUG_LOG);
         } catch (Throwable failure) {
             // Never let logging setup break app startup.
-            Log.e("BugLog", "install failed", failure);
+            Log.e("NezumiLog", "install failed", failure);
         }
     }
 
-    /** True when the Bug log patch is applied, i.e. the toggle in Nezumi's Settings does something. */
+    /** True when the Bug log patch is applied, i.e. the Debugging options in Nezumi's Settings do something. */
     public static boolean isAvailable() {
         return store != null;
     }
 
-    public static boolean isEnabled() {
-        return enabled && store != null;
+    /** True when anything is written to the file at all (errors and crashes at least). */
+    static boolean isRecording() {
+        return !off && store != null;
     }
 
-    /** Turns file logging on or off for this process and persists the choice. */
-    public static void setEnabled(Context context, boolean value) {
-        NezumiPrefs.of(context).edit().putBoolean(NezumiPrefs.BUG_LOG, value).apply();
+    public static boolean isDetailed() {
+        return detailed;
+    }
+
+    public static boolean isOff() {
+        return off;
+    }
+
+    /** Detailed logging: info and warning lines go to the file too. Persisted; applies to this process now. */
+    public static void setDetailed(Context context, boolean value) {
+        NezumiPrefs.of(context).edit().putBoolean(NezumiPrefs.BUG_LOG_DETAILED, value).apply();
+        if (value == detailed) return;
         if (value) {
-            enabled = true;
-            LogStore current = store;
-            if (current != null) current.startSession(NezumiLog::sessionHeader);
-            i(Patch.CORE, "NezumiLog", "bug log enabled");
-            if (mainProcess) ExitReasons.recordAsync(context);
+            // Keep what led up to this moment.
+            flushBuffered();
+            detailed = true;
+            i(Patch.CORE, "NezumiLog", "detailed logging on");
         } else {
-            i(Patch.CORE, "NezumiLog", "bug log disabled");
-            enabled = false;
-            LogStore current = store;
+            i(Patch.CORE, "NezumiLog", "detailed logging off");
+            detailed = false;
+        }
+    }
+
+    /** Turns the bug log off completely (nothing recorded) or back on. Persisted; applies to this process now. */
+    public static void setOff(Context context, boolean value) {
+        NezumiPrefs.of(context).edit().putBoolean(NezumiPrefs.BUG_LOG_OFF, value).apply();
+        if (value == off) return;
+        LogStore current = store;
+        if (value) {
+            i(Patch.CORE, "NezumiLog", "bug log turned off");
+            off = true;
+            RING.drain();
             if (current != null) current.flush();
+        } else {
+            off = false;
+            if (current != null) current.startSession(NezumiLog::sessionHeader);
+            i(Patch.CORE, "NezumiLog", "bug log turned on");
+            if (mainProcess) ExitReasons.recordAsync(context);
         }
     }
 
@@ -191,7 +232,7 @@ public final class NezumiLog {
      * otherwise repeat the same stack trace thousands of times and rotate the useful lines away.
      */
     public static void swallowedOnce(Patch patch, String tag, String message, Throwable failure) {
-        if (!enabled || store == null) return;
+        if (off) return;
         if (SEEN.size() < 512 && SEEN.add(patch.id + '\u0000' + tag + '\u0000' + message)) {
             file('W', patch, tag, message + " (further occurrences suppressed)", failure);
         }
@@ -204,33 +245,91 @@ public final class NezumiLog {
         return "[" + patch.id + "] " + message;
     }
 
+    /**
+     * Routes one line: errors to the file, info/warnings to the file in detailed mode and to the
+     * in-memory ring otherwise; before {@link #install} everything waits in {@link #EARLY}.
+     */
     private static void file(char level, Patch patch, String tag, String message, Throwable failure) {
-        LogStore current = store;
-        if (!enabled || current == null) return;
+        if (off || (store == null && !BUG_LOG_APPLIED)) return;
         try {
-            current.append(System.currentTimeMillis(), line(level, patch, tag, message, failure));
+            long now = System.currentTimeMillis();
+            String thread = Thread.currentThread().getName();
+            String text = String.valueOf(message);
+            String trace = failure == null ? null : stackTrace(failure);
+            LogStore current = store;
+            if (current == null) {
+                EARLY.add(now, level, patch.id, tag, thread, text, trace);
+            } else if (level == 'E' || detailed) {
+                current.append(now, render(level, patch.id, tag, thread, text, trace));
+            } else {
+                RING.add(now, level, patch.id, tag, thread, text, trace);
+            }
         } catch (Throwable ignored) {
             // Logging must never throw into the hooked code.
         }
     }
 
-    /** Synchronous write for the crash handler: the process may be gone right after this returns. */
+    private static String render(char level, String patchId, String tag, String thread, String message, String trace) {
+        return LogLine.body(level, patchId, tag, thread, LogRedactor.redact(message),
+            trace == null ? null : LogRedactor.redact(trace));
+    }
+
+    private static String render(RingBuffer.Entry entry) {
+        return render(entry.level, entry.patchId, entry.tag, entry.thread, entry.message, entry.detail);
+    }
+
+    private static void replayEarly(LogStore current) {
+        for (RingBuffer.Entry entry : EARLY.drain()) {
+            if (off) continue;
+            if (entry.level == 'E' || detailed) current.append(entry.time, render(entry));
+            else RING.add(entry.time, entry.level, entry.patchId, entry.tag, entry.thread, entry.message, entry.detail);
+        }
+    }
+
+    /** The buffered I/W lines as file entries, behind a marker line; empty when nothing is buffered. */
+    private static java.util.List<LogStore.Line> bufferedLines() {
+        java.util.List<RingBuffer.Entry> entries = RING.drain();
+        java.util.List<LogStore.Line> lines = new java.util.ArrayList<>(entries.size() + 1);
+        if (entries.isEmpty()) return lines;
+        lines.add(new LogStore.Line(entries.get(0).time, LogLine.body('I', Patch.CORE.id, "NezumiLog",
+            Thread.currentThread().getName(), "---- " + entries.size()
+                + " buffered info/warning lines from this process (detailed logging off) ----", null)));
+        for (RingBuffer.Entry entry : entries) lines.add(new LogStore.Line(entry.time, render(entry)));
+        return lines;
+    }
+
+    /** Writes the buffered I/W lines to the file and waits for the disk. Used by export. */
+    static void flushBuffered() {
+        LogStore current = store;
+        if (current == null) return;
+        if (!off) current.appendAll(bufferedLines());
+        current.flush();
+    }
+
+    /** Drops the buffered lines, for "Clear log". */
+    static void clearBuffered() {
+        RING.drain();
+        EARLY.drain();
+    }
+
+    /**
+     * Synchronous write for the crash handler: the buffered lead-up first, then the crash. The
+     * process may be gone right after this returns.
+     */
     static void fileNow(char level, Patch patch, String tag, String message, Throwable failure) {
         LogStore current = store;
-        if (!enabled || current == null) return;
-        current.appendNow(System.currentTimeMillis(), line(level, patch, tag, message, failure));
+        if (off || current == null) return;
+        java.util.List<LogStore.Line> lines = bufferedLines();
+        lines.add(new LogStore.Line(System.currentTimeMillis(), render(level, patch.id, tag,
+            Thread.currentThread().getName(), String.valueOf(message), failure == null ? null : stackTrace(failure))));
+        current.appendNow(lines);
     }
 
+    /** A pre-formatted, multi-line entry (exit reasons); always recorded unless the bug log is off. */
     static void fileRaw(String text) {
         LogStore current = store;
-        if (!enabled || current == null) return;
+        if (off || current == null) return;
         current.append(System.currentTimeMillis(), LogRedactor.redact(text));
-    }
-
-    private static String line(char level, Patch patch, String tag, String message, Throwable failure) {
-        return LogLine.body(level, patch.id, tag, Thread.currentThread().getName(),
-            LogRedactor.redact(String.valueOf(message)),
-            failure == null ? null : LogRedactor.redact(stackTrace(failure)));
     }
 
     static String stackTrace(Throwable failure) {
@@ -268,6 +367,8 @@ public final class NezumiLog {
             }
         }
         out.append("bundle: Nezumi Patches ").append(bundleVersion()).append('\n');
+        out.append("logging: ").append(off ? "off" : detailed ? "detailed"
+            : "errors only (last " + RingBuffer.CAPACITY + " info/warning lines kept in memory)").append('\n');
         out.append("exit-info: ").append(Build.VERSION.SDK_INT >= 30 ? "supported" : "unsupported").append('\n');
         out.append("options:");
         if (context != null) {

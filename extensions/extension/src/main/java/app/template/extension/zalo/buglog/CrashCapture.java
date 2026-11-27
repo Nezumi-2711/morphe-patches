@@ -8,7 +8,8 @@ package app.template.extension.zalo.buglog;
  * <p>Zalo and its crash SDKs install their own handlers after {@code attachBaseContext}, and one
  * branch of Zalo's handler calls {@code System.exit} without delegating. So the handler is
  * re-wrapped on top whenever an activity is created or resumed, and each throwable is logged once
- * even if it passes through several of our wrappers in the chain.
+ * even if it passes through several of our wrappers in the chain. The info/warning lines buffered
+ * in memory (detailed logging off) are written first, synchronously, so the lead-up survives.
  *
  * <p>The crash line names the patches involved: {@code [patched-by: ...]} for patches that modified
  * a Zalo method on the stack, {@code [nezumi: ...]} for patches whose extension code is on it.

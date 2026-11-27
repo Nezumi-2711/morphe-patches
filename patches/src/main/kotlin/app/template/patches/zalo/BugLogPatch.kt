@@ -15,8 +15,9 @@ private const val MAIN_APPLICATION = "Lcom/zing/zalo/MainApplication;"
 @Suppress("unused")
 val bugLogPatch = bytecodePatch(
     name = "Bug log",
-    description = "Adds a Debugging section to Nezumi's Settings that records patch errors, crashes and ANRs " +
-        "to a local log the user can export and share with the developer. Recording is off until the user turns it on.",
+    description = "Adds a Debugging section to Nezumi's Settings with a local log the user can export and share " +
+        "with the developer. Errors, crashes and ANRs are always recorded and named by patch; detailed logging " +
+        "and turning the log off completely are options.",
     default = true,
 ) {
     compatibleWith(Compatibility(

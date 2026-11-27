@@ -44,7 +44,7 @@ final class ExitReasons {
     }
 
     private static synchronized void record(Context context) {
-        if (Build.VERSION.SDK_INT < 30 || !NezumiLog.isEnabled()) return;
+        if (Build.VERSION.SDK_INT < 30 || !NezumiLog.isRecording()) return;
         ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         if (manager == null) return;
         SharedPreferences prefs = NezumiPrefs.of(context);

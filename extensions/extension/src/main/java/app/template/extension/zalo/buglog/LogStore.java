@@ -9,11 +9,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Append-only bug-log file for one process, rotated as {@code <name>.log} + {@code <name>.1.log}.
  * Lines are queued and written by a daemon thread so callers on the UI thread never touch disk;
  * {@link #appendNow} drains the queue synchronously for the crash path, where the process is about to die.
+ * Lines dropped because the queue was full are counted and reported on the next write.
  */
 final class LogStore {
     static final long MAX_FILE_BYTES = 1024 * 1024;
@@ -21,6 +23,17 @@ final class LogStore {
 
     interface HeaderSource {
         String header();
+    }
+
+    /** A rendered line (everything after the timestamp) and when it was logged. */
+    static final class Line {
+        final long time;
+        final String body;
+
+        Line(long time, String body) {
+            this.time = time;
+            this.body = body;
+        }
     }
 
     private static final class Entry {
@@ -44,6 +57,7 @@ final class LogStore {
     private final String baseName;
     private final LinkedBlockingQueue<Entry> queue = new LinkedBlockingQueue<>(4096);
     private final Object lock = new Object();
+    private final AtomicInteger dropped = new AtomicInteger();
     private Writer writer;
     private long size;
     /** The current session's header, repeated at the top of the file after a rotation. */
@@ -66,16 +80,21 @@ final class LogStore {
         queue.offer(new Entry(System.currentTimeMillis(), null, header));
     }
 
-    /** Queues a line; drops it when the queue is full rather than blocking the caller. */
+    /** Queues a line; drops (and counts) it when the queue is full rather than blocking the caller. */
     void append(long time, String body) {
-        queue.offer(new Entry(time, body));
+        if (!queue.offer(new Entry(time, body))) dropped.incrementAndGet();
     }
 
-    /** Writes everything queued plus this line before returning. Used when the process is dying. */
-    void appendNow(long time, String body) {
+    /** Queues several lines in order. */
+    void appendAll(List<Line> lines) {
+        for (Line line : lines) append(line.time, line.body);
+    }
+
+    /** Writes everything queued plus these lines before returning. Used when the process is dying. */
+    void appendNow(List<Line> lines) {
         synchronized (lock) {
             drainLocked();
-            writeLocked(new Entry(time, body));
+            for (Line line : lines) writeLocked(new Entry(line.time, line.body));
             flushLocked();
         }
     }
@@ -91,6 +110,7 @@ final class LogStore {
     void clearAll() {
         synchronized (lock) {
             queue.clear();
+            dropped.set(0);
             closeLocked();
             File[] files = dir.listFiles();
             if (files != null) {
@@ -130,6 +150,13 @@ final class LogStore {
             if (writer == null) openLocked();
             if (size >= MAX_FILE_BYTES) {
                 rotateLocked();
+            }
+            int lost = dropped.getAndSet(0);
+            if (lost > 0) {
+                String note = LogLine.full(entry.time, LogLine.body('W', Patch.CORE.id, "BugLog",
+                    Thread.currentThread().getName(), "dropped " + lost + " lines", null)) + '\n';
+                writer.write(note);
+                size += note.getBytes(StandardCharsets.UTF_8).length;
             }
             String line;
             if (entry.session != null) {
