@@ -345,7 +345,9 @@ val unlimitedQuickMessagesPatch = bytecodePatch(
         """.trimIndent(), ExternalLabel("nezumi_original", update.implementation!!.instructions.first()))
 
         // 5) Delete: pru.L(id, json) -> ufk.c, then report success to the request's el2 callback (pru.b).
-        delete.addInstructions(0, """
+        // WithLabels binds :nezumi_done to this method; plain addInstructions keeps it pointing at the
+        // compiler's scratch method, which breaks once anything is inserted above (the bug-log breadcrumb).
+        delete.addInstructionsWithLabels(0, """
             iget-object p3, p0, Lpru;->b:Lel2;
             invoke-static {p1, p2}, $LOCAL_QUICK_MESSAGES->ids(J)Ljava/util/ArrayList;
             move-result-object v5

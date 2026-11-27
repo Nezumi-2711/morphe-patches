@@ -5,6 +5,16 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import com.android.tools.smali.dexlib2.AccessFlags
+import com.android.tools.smali.dexlib2.builder.BuilderInstruction
+import com.android.tools.smali.dexlib2.builder.BuilderOffsetInstruction
+import com.android.tools.smali.dexlib2.builder.Label
+import com.android.tools.smali.dexlib2.builder.BuilderSwitchPayload
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction10t
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction20t
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21t
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction22t
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction30t
+import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction31t
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
@@ -108,6 +118,49 @@ internal fun BytecodePatchContext.registerHooks(patchId: String, vararg methods:
     }
 }
 
+/**
+ * Smali added with plain `addInstructions(index, smali)` keeps its own branch labels attached to the
+ * inline compiler's scratch method. Their offsets are only right while nothing is inserted above the
+ * snippet, and the breadcrumb is inserted at index 0, so the branch would land a few code units short
+ * and ART rejects the class. Re-point every such branch at the same instruction in this method first.
+ */
+private fun MutableMethod.rebindScratchLabels() {
+    val implementation = implementation ?: return
+    val instructions = implementation.instructions
+    instructions.toList().forEachIndexed { index, instruction ->
+        if (instruction is BuilderSwitchPayload) {
+            check(instruction.switchElements.none { it.target.isScratch() }) {
+                "Bug log: switch in ${descriptor()} targets a scratch label; add that smali with addInstructionsWithLabels"
+            }
+            return@forEachIndexed
+        }
+        if (instruction !is BuilderOffsetInstruction) return@forEachIndexed
+        if (!instruction.target.isScratch()) return@forEachIndexed
+        val target = instruction.target.location.instruction
+        val targetIndex = if (target == null) -1 else instructions.indexOfFirst { it === target }
+        check(targetIndex >= 0) {
+            "Bug log: branch at $index in ${descriptor()} targets a label outside the method; add that smali with addInstructionsWithLabels"
+        }
+        val label = implementation.newLabelForIndex(targetIndex)
+        val rebound = when (instruction) {
+            is BuilderInstruction10t -> BuilderInstruction10t(instruction.opcode, label)
+            is BuilderInstruction20t -> BuilderInstruction20t(instruction.opcode, label)
+            is BuilderInstruction30t -> BuilderInstruction30t(instruction.opcode, label)
+            is BuilderInstruction21t -> BuilderInstruction21t(instruction.opcode, instruction.registerA, label)
+            is BuilderInstruction22t -> BuilderInstruction22t(instruction.opcode, instruction.registerA, instruction.registerB, label)
+            is BuilderInstruction31t -> BuilderInstruction31t(instruction.opcode, instruction.registerA, label)
+            else -> error("Bug log: cannot rebind ${instruction.opcode} in ${descriptor()}")
+        }
+        implementation.replaceInstruction(index, rebound)
+    }
+}
+
+/** True when the label's location belongs to another method (its instruction has moved on). */
+private fun Label.isScratch(): Boolean {
+    val target = location.instruction as? BuilderInstruction
+    return target == null || target.location !== location
+}
+
 /** `keep-recalled-messages` to `keepRecalledMessages`, the breadcrumb method in `buglog/Hits`. */
 internal fun hitMethodName(patchId: String): String {
     val parts = patchId.split('-')
@@ -167,6 +220,7 @@ internal fun BytecodePatchContext.bakeBugLogRegistry() {
 
     val hitsClass = classDefBy(NEZUMI_LOG_HITS)
     registry.hits.values.forEach { (method, patchIds) ->
+        method.rebindScratchLabels()
         // Reverse so the breadcrumbs end up in registration order at the top of the method.
         patchIds.reversed().forEach { id ->
             val name = hitMethodName(id)
