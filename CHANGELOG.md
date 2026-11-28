@@ -1,3 +1,15 @@
+## [1.9.0-dev.1](https://github.com/Nezumi-2711/morphe-patches/compare/v1.8.0...v1.9.0-dev.1) (2026-11-28)
+
+### ✨ New Features
+
+* **zalo:** add rich text formatting toolbar ([e8ed43d](https://github.com/Nezumi-2711/morphe-patches/commit/e8ed43dd08a697f38383e9b94b49ad0e222a951a)), closes [#55](https://github.com/Nezumi-2711/morphe-patches/issues/55)
+* **zalo:** let users choose the folder for recorded calls ([8f50a22](https://github.com/Nezumi-2711/morphe-patches/commit/8f50a224fc42ace6934796617b01973c412339b2)), closes [#56](https://github.com/Nezumi-2711/morphe-patches/issues/56)
+
+### 🐛 Bug Fixes
+
+* **zalo:** avoid Java 21 reversed() in bug log registry ([471f954](https://github.com/Nezumi-2711/morphe-patches/commit/471f95489222ee096389ec15c52d08c4a4cc7957))
+* **zalo:** suppress OA notifications that bypass mute ([a9fe250](https://github.com/Nezumi-2711/morphe-patches/commit/a9fe2501653690e4b4d72f64e6063fb59534c8a1))
+
 ## [1.8.0](https://github.com/Nezumi-2711/morphe-patches/compare/v1.7.0...v1.8.0) (2026-11-27)
 
 ### 🐛 Bug Fixes
