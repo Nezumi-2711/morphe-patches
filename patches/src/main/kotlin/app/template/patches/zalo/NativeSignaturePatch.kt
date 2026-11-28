@@ -3,7 +3,9 @@ package app.template.patches.zalo
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.rawResourcePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.resourceFile
+import app.morphe.patcher.patch.listApkEntries
 import java.nio.file.Files
 
 private const val LIBRARY = "lib/arm64-v8a/libnative_utils.so"
@@ -67,7 +69,7 @@ private fun findSignerFailureOffset(bytes: ByteArray): Int {
 }
 
 @Suppress("unused")
-val nativeSignaturePatch = rawResourcePatch(
+val nativeSignaturePatch = patch(
     name = "Native signature fix",
     description = "Allow Zalo 26.11.01 ARM64 to start after patching and re-signing. ARMv7 is not supported.",
     default = true,
@@ -82,7 +84,7 @@ val nativeSignaturePatch = rawResourcePatch(
 
     execute {
         check(LIBRARY in listApkEntries("lib/arm64-v8a/")) { "Missing $LIBRARY" }
-        val file = this[LIBRARY].toPath()
+        val file = resourceFile(LIBRARY).toPath()
         val bytes = Files.readAllBytes(file)
         val offset = findSignerFailureOffset(bytes)
         writeUInt32LittleEndian(bytes, offset, MOV_W0_ONE)

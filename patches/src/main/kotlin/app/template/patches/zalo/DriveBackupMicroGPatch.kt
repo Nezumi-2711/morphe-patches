@@ -13,10 +13,12 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLa
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
-import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.classDefBy
+import app.morphe.patcher.patch.mutableClassDefBy
+import app.morphe.patcher.patch.classDefForEach
+import app.morphe.patcher.patch.document
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -127,7 +129,7 @@ private fun replaceAccountPicker(method: MutableMethod, contextOwner: String) = 
     return-void
 """.trimIndent())
 
-private val driveMicroGManifest = resourcePatch {
+private val driveMicroGManifest = patch{
     compatibleWith(driveCompatibility)
 
     execute {
@@ -203,7 +205,7 @@ private fun Method.invokes(predicate: (MethodReference) -> Boolean) =
     } == true
 
 @Suppress("unused")
-val driveBackupMicroGPatch = bytecodePatch(
+val driveBackupMicroGPatch = patch(
     name = "Drive backup via microG",
     description = "Enable Google Drive photo backup and use microG for Drive accounts and authentication.",
     default = true,
@@ -339,7 +341,7 @@ private const val GMS_TOKEN_API_MIN_VERSION = 17895000L
 
 // Routes the refresher's GoogleAuthUtil.getToken calls through DriveTokenRecovery.getToken, which calls the
 // original and rethrows its exception unchanged but logs the cause that Zalo's catch blocks swallow.
-private fun BytecodePatchContext.wrapDriveGetToken(refresher: MutableMethod, authUtil: ClassDef) {
+private fun wrapDriveGetToken(refresher: MutableMethod, authUtil: ClassDef) {
     fun isStatic(m: Method) = m.accessFlags and AccessFlags.STATIC.value != 0
     val getTokens = authUtil.methods.filter {
         isStatic(it) && it.returnType == "Ljava/lang/String;" && it.parameterTypes.joinToString("") in GET_TOKEN_SIGNATURES

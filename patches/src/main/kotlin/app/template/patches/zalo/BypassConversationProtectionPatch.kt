@@ -7,7 +7,7 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -37,7 +37,7 @@ private object ConversationProtectedFlowFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val bypassConversationProtectionPatch = bytecodePatch(
+val bypassConversationProtectionPatch = patch(
     name = "Bypass conversation protection",
     description = "Unblock screenshots, screen recording, forwarding, copying and saving media in protected conversations when enabled in Nezumi Settings.",
     default = true,

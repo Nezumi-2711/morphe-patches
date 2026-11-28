@@ -2,7 +2,10 @@ package app.template.patches.zalo
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
-import app.morphe.patcher.patch.BytecodePatchContext
+import app.morphe.patcher.PackageMetadata
+import app.morphe.patcher.patch.packageMetadata
+import app.morphe.patcher.patch.classDefBy
+import app.morphe.patcher.patch.mutableClassDefBy
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.builder.BuilderInstruction
@@ -71,11 +74,12 @@ private class BugLogRegistry {
     val hits = LinkedHashMap<String, Pair<MutableMethod, LinkedHashSet<String>>>()
 }
 
-// Keyed by patcher run so a second run in the same JVM (Manager, desktop) starts clean.
-private val registries = WeakHashMap<BytecodePatchContext, BugLogRegistry>()
+// Keyed by patcher run so a second run in the same JVM (Manager, desktop) starts clean. Each run has
+// its own PackageMetadata instance (identity equality), so it stands in for the run.
+private val registries = WeakHashMap<PackageMetadata, BugLogRegistry>()
 
-private val BytecodePatchContext.bugLogRegistry: BugLogRegistry
-    get() = synchronized(registries) { registries.getOrPut(this) { BugLogRegistry() } }
+private val bugLogRegistry: BugLogRegistry
+    get() = synchronized(registries) { registries.getOrPut(packageMetadata) { BugLogRegistry() } }
 
 private fun Method.descriptor() = "$definingClass->$name(${parameterTypes.joinToString("")})$returnType"
 
@@ -85,7 +89,7 @@ private fun Method.isExtensionCode() = definingClass.startsWith(EXTENSION_DESCRI
  * Records that [patchId] is applied, with its build-time [options]. Call once from the patch's
  * execute block. [selfReportedHook] marks a patch whose extension logs its own breadcrumb.
  */
-internal fun BytecodePatchContext.registerApplied(
+internal fun registerApplied(
     patchId: String,
     options: Map<String, Any?> = emptyMap(),
     selfReportedHook: Boolean = false,
@@ -96,7 +100,7 @@ internal fun BytecodePatchContext.registerApplied(
 }
 
 /** Records that [patchId] modified the Zalo [method], for crash attribution. Extension methods are ignored. */
-internal fun BytecodePatchContext.registerTouched(patchId: String, method: Method) {
+internal fun registerTouched(patchId: String, method: Method) {
     if (method.isExtensionCode()) return
     bugLogRegistry.touched.getOrPut(method.descriptor()) { LinkedHashSet() } += patchId
 }
@@ -106,13 +110,13 @@ internal fun BytecodePatchContext.registerTouched(patchId: String, method: Metho
  * touched) for the start of [method]. Inserted by the Bug log patch's finalize block, after every
  * patch has finished editing, so no patch's instruction indexes shift under it.
  */
-internal fun BytecodePatchContext.injectHit(method: MutableMethod, patchId: String) {
+internal fun injectHit(method: MutableMethod, patchId: String) {
     if (method.isExtensionCode() || method.implementation == null) return
     bugLogRegistry.hits.getOrPut(method.descriptor()) { method to LinkedHashSet() }.second += patchId
 }
 
 /** [registerTouched] plus [injectHit] for each runtime hook [methods] of [patchId]. */
-internal fun BytecodePatchContext.registerHooks(patchId: String, vararg methods: MutableMethod) {
+internal fun registerHooks(patchId: String, vararg methods: MutableMethod) {
     methods.forEach { method ->
         registerTouched(patchId, method)
         injectHit(method, patchId)
@@ -185,7 +189,7 @@ private fun smaliString(value: String) = buildString {
 }
 
 /** Replaces the body of the static `String name()` stub in [classType] with `return value`. */
-internal fun BytecodePatchContext.bakeStringStub(classType: String, name: String, value: String) {
+internal fun bakeStringStub(classType: String, name: String, value: String) {
     val stub = mutableClassDefBy(classType).methods.single {
         it.name == name && it.parameterTypes.isEmpty() && it.returnType == "Ljava/lang/String;"
     }
@@ -200,7 +204,7 @@ internal fun BytecodePatchContext.bakeStringStub(classType: String, name: String
  * after every patch's execute block. Fails the build when a registered patch id has no constant in
  * the extension enum, so ids cannot silently drift from the Java side.
  */
-internal fun BytecodePatchContext.bakeBugLogRegistry() {
+internal fun bakeBugLogRegistry() {
     val registry = bugLogRegistry
 
     val enumClass = classDefBy(NEZUMI_LOG_PATCH)

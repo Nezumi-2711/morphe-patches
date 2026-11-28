@@ -8,7 +8,8 @@ import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.mutableClassDefBy
 import app.morphe.patcher.string
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.smali.ExternalLabel
@@ -42,7 +43,7 @@ private object IncomingDeleteControlFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val keepRecalledMessagesPatch = bytecodePatch(
+val keepRecalledMessagesPatch = patch(
     name = "Keep recalled messages",
     description = "Keep received messages and locally available photos after another user recalls them, when enabled in Nezumi Settings.",
     default = true,

@@ -9,7 +9,7 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -29,7 +29,7 @@ private object BusinessBoxListFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val hideBusinessBoxPatch = bytecodePatch(
+val hideBusinessBoxPatch = patch(
     name = "Hide Business Box in Messages",
     description = "Hide the Business Box row in Messages when enabled in Nezumi Settings.",
     default = true,

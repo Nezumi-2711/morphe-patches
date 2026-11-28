@@ -10,7 +10,7 @@ import app.morphe.patcher.string
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -40,7 +40,7 @@ private object ChatNotificationEntryFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val hideOfficialAccountsPatch = bytecodePatch(
+val hideOfficialAccountsPatch = patch(
     name = "Hide OA accounts in Messages",
     description = "Hide OA accounts in Messages and/or mute their notifications. Both options are configurable in Nezumi Settings.",
     default = true,

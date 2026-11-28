@@ -8,7 +8,7 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -57,7 +57,7 @@ private fun suppressTextTyping(method: MutableMethod, statusParameter: String) {
 }
 
 @Suppress("unused")
-val hideTextTypingPatch = bytecodePatch(
+val hideTextTypingPatch = patch(
     name = "Hide text typing",
     description = "Hide outgoing text typing in direct and group chats when enabled in Nezumi Settings.",
     default = true,

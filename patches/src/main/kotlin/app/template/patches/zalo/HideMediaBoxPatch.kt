@@ -9,7 +9,7 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -27,7 +27,7 @@ private object MediaBoxListFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val hideMediaBoxPatch = bytecodePatch(
+val hideMediaBoxPatch = patch(
     name = "Hide Media Box in Messages",
     description = "Hide the Media Box row in Messages when enabled in Nezumi Settings.",
     default = true,

@@ -8,8 +8,8 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.BytecodePatchContext
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.mutableClassDefBy
 import app.morphe.patcher.string
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -54,7 +54,7 @@ private object ZaloFontStartupFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val customFontPatch = bytecodePatch(
+val customFontPatch = patch(
     name = "Custom font",
     description = "Choose a font in Nezumi's Settings for Zalo's text, chat messages, info card, options, and contacts.",
     default = true,
@@ -79,7 +79,7 @@ val customFontPatch = bytecodePatch(
     }
 }
 
-private fun BytecodePatchContext.applyCurrentFontHooks() {
+private fun applyCurrentFontHooks() {
     val extension = CUSTOM_FONT
     val factory = ZaloTypefaceFactoryFingerprint.method
     val original = factory.implementation!!.instructions.first()

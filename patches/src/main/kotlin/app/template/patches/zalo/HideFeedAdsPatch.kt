@@ -4,7 +4,9 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.mutableClassDefBy
+import app.morphe.patcher.patch.classDefForEach
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
@@ -24,7 +26,7 @@ private data class FeedListMatch(
 )
 
 @Suppress("unused")
-val hideFeedAdsPatch = bytecodePatch(
+val hideFeedAdsPatch = patch(
     name = "Hide feed ads",
     description = "Remove sponsored and advertising items from Zalo's user feed when enabled in Nezumi Settings.",
     default = true,

@@ -10,7 +10,10 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.classDefBy
+import app.morphe.patcher.patch.mutableClassDefBy
+import app.morphe.patcher.patch.classDefForEach
 import app.morphe.patcher.string
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.smali.ExternalLabel
@@ -247,7 +250,7 @@ private fun MutableMethod.registersWrittenBetween(from: Int, until: Int) =
     code.toList().subList(from, until).flatMap { it.registerAccess().second }.toSet()
 
 @Suppress("unused")
-val openLinksExternallyPatch = bytecodePatch(
+val openLinksExternallyPatch = patch(
     name = "Open links in external browser",
     description = "Applies Zalo's \"Mở bằng trình duyệt web\" choice (Settings > Privacy > Chọn cách mở link) to all " +
         "links, including link-preview video cards, feed and comment links, group board/My Cloud links and " +

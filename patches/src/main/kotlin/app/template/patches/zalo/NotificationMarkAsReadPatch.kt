@@ -7,7 +7,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLa
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.string
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -41,7 +41,7 @@ private object ZaloReceiverHandleFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val notificationMarkAsReadPatch = bytecodePatch(
+val notificationMarkAsReadPatch = patch(
     name = "Mark as read from notifications",
     description = "Adds Mark as read to chat, reaction, message error and missed Zalo call notifications, " +
         "and Mark all as read when two or more conversations have notifications. " +

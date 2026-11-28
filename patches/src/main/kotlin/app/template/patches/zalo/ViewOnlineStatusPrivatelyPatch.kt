@@ -8,7 +8,9 @@ import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.mutableClassDefBy
+import app.morphe.patcher.patch.classDefForEach
 import app.morphe.patcher.string
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.literal
@@ -70,7 +72,7 @@ private object ChatOnlineListRefresh : Fingerprint(
 )
 
 @Suppress("unused")
-val viewOnlineStatusPrivatelyPatch = bytecodePatch(
+val viewOnlineStatusPrivatelyPatch = patch(
     name = "View online status privately",
     description = "Hide your activity and show confirmed current-online status in the individual chat header when available.",
     default = true,

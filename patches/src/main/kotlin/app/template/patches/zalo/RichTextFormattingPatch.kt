@@ -15,7 +15,9 @@ import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.classDefBy
+import app.morphe.patcher.patch.mutableClassDefBy
 import app.morphe.patcher.string
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.smali.ExternalLabel
@@ -162,7 +164,7 @@ private val Instruction.methodReference get() = (this as? ReferenceInstruction)?
 private val Instruction.fieldReference get() = (this as? ReferenceInstruction)?.reference as? FieldReference
 
 @Suppress("unused")
-val richTextFormattingPatch = bytecodePatch(
+val richTextFormattingPatch = patch(
     name = "Rich text formatting",
     description = "Adds a formatting toolbar (Aa) to the message composer and sends bold, italic, underline, " +
         "strikethrough, size, color, lists and indent as rich text that the Zalo app and Zalo Web display. " +

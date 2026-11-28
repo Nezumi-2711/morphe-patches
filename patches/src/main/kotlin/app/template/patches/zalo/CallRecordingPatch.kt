@@ -7,7 +7,8 @@ import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.mutableClassDefBy
 import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -64,7 +65,7 @@ private object CallServiceDestroyFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val callRecordingPatch = bytecodePatch(
+val callRecordingPatch = patch(
     name = "Call recording",
     description = "Adds a record button to the Zalo 1-1 in-call screen. Recordings are saved as m4a in Music/ZaloRecordings.",
     default = true,

@@ -8,7 +8,8 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.mutableClassDefBy
 import app.morphe.patcher.string
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -39,7 +40,7 @@ private object ChatDrawerButtonFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val hideReadReceiptsPatch = bytecodePatch(
+val hideReadReceiptsPatch = patch(
     name = "Hide read receipts",
     description = "Keep outgoing read receipts private while retaining delivery ACKs when enabled in Nezumi Settings. " +
         "Adds a Mark as read button to the chat toolbar for sending a read receipt on demand; " +

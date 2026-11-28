@@ -4,7 +4,9 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLa
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.mutableClassDefBy
+import app.morphe.patcher.patch.classDefForEach
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -19,7 +21,7 @@ private data class MessageAdsMatch(
 )
 
 @Suppress("unused")
-val hideMessageAdsPatch = bytecodePatch(
+val hideMessageAdsPatch = patch(
     name = "Hide ads in Messages",
     description = "Hide Z Instant Ads rows in Zalo's Messages page when enabled in Nezumi Settings.",
     default = true,

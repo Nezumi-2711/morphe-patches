@@ -12,7 +12,7 @@ import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.string
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -155,7 +155,7 @@ private object ShortVideoShareSheetGateFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val saveMediaPatch = bytecodePatch(
+val saveMediaPatch = patch(
     name = "Save media",
     description = "Adds Save to Gallery for profile avatar, profile cover, Story, Zalo Video, feed videos, and post videos and photos.",
     default = true,

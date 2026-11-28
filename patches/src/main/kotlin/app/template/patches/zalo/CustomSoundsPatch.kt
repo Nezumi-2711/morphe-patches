@@ -6,8 +6,8 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.document
 import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -16,7 +16,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 
 private const val DATA_SOURCE = "Landroid/media/MediaPlayer;->setDataSource(Landroid/content/Context;Landroid/net/Uri;)V"
 
-private val soundProviderPatch = resourcePatch {
+private val soundProviderPatch = patch{
     execute {
         document("AndroidManifest.xml").use { document ->
             val application = document.getElementsByTagName("application").item(0)
@@ -65,7 +65,7 @@ private object OneShotNotificationFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val customSoundsPatch = bytecodePatch(
+val customSoundsPatch = patch(
     name = "Custom sounds",
     description = "Choose custom notification and incoming-call sounds in Nezumi's Settings.",
     default = true,

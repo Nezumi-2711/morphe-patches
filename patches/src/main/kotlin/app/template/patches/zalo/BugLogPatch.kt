@@ -4,7 +4,8 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.mutableClassDefBy
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
@@ -13,7 +14,7 @@ import java.util.jar.Manifest
 private const val MAIN_APPLICATION = "Lcom/zing/zalo/MainApplication;"
 
 @Suppress("unused")
-val bugLogPatch = bytecodePatch(
+val bugLogPatch = patch(
     name = "Bug log",
     description = "Adds a Debugging section to Nezumi's Settings with a local log the user can export and share " +
         "with the developer. Errors, crashes and ANRs are always recorded and named by patch; detailed logging " +
@@ -33,7 +34,7 @@ val bugLogPatch = bytecodePatch(
 
     execute {
         registerApplied(PatchId.BUG_LOG, selfReportedHook = true)
-        // A dependency, so always applied with this patch; it is a raw resource patch and cannot register itself.
+        // A dependency, so always applied with this patch; it only edits the native library, so it does not register itself.
         registerApplied(PatchId.NATIVE_SIGNATURE_FIX)
 
         // Bake the bundle version into the log header.
