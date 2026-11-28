@@ -10,7 +10,7 @@
     [
         "@semantic-release/commit-analyzer", {
         "releaseRules": [
-          { "breaking": true, "release": "major" },
+            { "breaking": true, "release": "major" },
             { "type": "fix", "release": "patch" },
             { "type": "feat", "release": "minor" },
             { "type": "bump", "release": "patch" },
@@ -24,10 +24,10 @@
         "preset": "conventionalcommits",
         "presetConfig": {
             "types": [
-                { "type": "fix", "section": "🐛 Bug Fixes", "hidden": false },
                 { "type": "feat", "section": "✨ New Features", "hidden": false },
-                { "type": "bump", "section": "🚀 Updated App Support", "hidden": false },
                 { "type": "perf", "section": "🔧 Improvements",  "hidden": false },
+                { "type": "fix", "section": "🐛 Bug Fixes", "hidden": false },
+                { "type": "bump", "section": "🚀 Updated App Support", "hidden": false },
                 { "type": "build", "hidden": true }
             ]
         }
@@ -37,7 +37,7 @@
       "@MorpheApp/changelog", {
         "releaseJson": {
           "path": "patches-bundle.json",
-          "downloadUrlTemplate": "https://github.com/${owner}/${repo}/releases/download/v${version}/patches-${version}.mpp",
+          "downloadUrlTemplate": "https://${host}/${owner}/${repo}/releases/download/v${version}/patches-${version}.mpp",
           "signatureUrlTemplate": "",
           "publicKeyPath": "morphe-signing.pub"
         }
@@ -56,9 +56,9 @@
         "assets": [
           "CHANGELOG.md",
           "gradle.properties",
-          "patches-bundle.json",
           "patches-list.json",
-          "README.md"
+          "README.md",
+          "PATCHES.md"
         ],
         "message": "chore: Release v${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
@@ -74,6 +74,15 @@
         "successComment": "${nextRelease.version.includes('-') ? '🧪 Included in pre-release' : '🚀 Released in'} [${nextRelease.gitTag}](${releases && releases[0] ? releases[0].url : ''}).${nextRelease.version.includes('-') ? ' This ticket stays open until the stable release.' : ' Closing this ticket.'}",
         "releasedLabels": ["${nextRelease.version.includes('-') ? 'in-prerelease' : 'released'}"],
         "failCommentCondition": false
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "successCmd": "git add patches-bundle.json \
+          && git commit -m \"chore: Publish v${nextRelease.version} in patches-bundle.json [skip ci]\" \
+          && git pull --rebase --autostash origin ${branch.name} \
+          && git push origin HEAD:${branch.name}"
       }
     ],
     [

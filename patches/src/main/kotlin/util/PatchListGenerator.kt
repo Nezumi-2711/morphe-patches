@@ -10,34 +10,20 @@ import app.morphe.patcher.patch.loadPatchesFromJar
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import java.io.File
-import java.net.URLClassLoader
-import java.util.jar.Manifest
+import java.util.jar.JarFile
 
-fun main() {
-    val patchFiles = setOf(
-        File("build/libs/").listFiles { file ->
-            val fileName = file.name
-            !fileName.contains("javadoc") &&
-                    !fileName.contains("sources") &&
-                    fileName.endsWith(".mpp")
-        }!!.first()
-    )
-    val loadedPatches = loadPatchesFromJar(patchFiles)
-    val patchClassLoader = URLClassLoader(patchFiles.map { it.toURI().toURL() }.toTypedArray())
-    val manifest = patchClassLoader.getResources("META-INF/MANIFEST.MF")
+fun main(args: Array<String>) {
+    require(args.size == 1) { "Expected a patch bundle path." }
+    val patchBundle = File(args[0])
+    val version = JarFile(patchBundle).use {
+        it.manifest?.mainAttributes?.getValue("Version")
+    } ?: error("Patch bundle has no Version in its manifest: $patchBundle")
 
-    while (manifest.hasMoreElements()) {
-        Manifest(manifest.nextElement().openStream())
-            .mainAttributes
-            .getValue("Version")
-            ?.let {
-                generatePatchList(it, loadedPatches)
-            }
-    }
+    generatePatchList(version, loadPatchesFromJar(setOf(patchBundle)))
 }
 
 @Suppress("DEPRECATION")
-private fun generatePatchList(version: String, patches: Set<Patch<*>>) {
+private fun generatePatchList(version: String, patches: Set<Patch>) {
     val listJson = File("../patches-list.json")
 
     val patchesMap = patches.sortedBy { it.name }.map { patch ->
@@ -57,6 +43,7 @@ private fun generatePatchList(version: String, patches: Set<Patch<*>>) {
                     // Format as #RRGGBB string for readability; null if not set
                     appIconColor = compat.appIconColor?.let { "#%06X".format(it) },
                     signatures = compat.signatures,
+                    formFactor = compat.formFactor?.name,
                     targets = compat.targets.map { target ->
                         JsonCompatibility.Target(
                             version = target.version,
@@ -139,6 +126,8 @@ private class JsonCompatibility(
     val appIconColor: String?,
     /** Valid SHA-256 signatures of the app. */
     val signatures: Set<String>?,
+    /** Device form factor of the app, e.g. MOBILE, TV. Null means all form factors. */
+    val formFactor: String?,
     val targets: List<Target>,
 ) {
     class Target(

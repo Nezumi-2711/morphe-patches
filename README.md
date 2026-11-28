@@ -8,7 +8,11 @@ This repository contains Zalo patches for chat heads, chat reactions and optiona
 
 ### How to use these patches
 
-Add this source in Morphe: https://morphe.software/add-source?github=Nezumi-2711/morphe-patches
+Click the button below, or manually add this repo url to Morphe Manager: https://github.com/Nezumi-2711/morphe-patches
+
+<a href="https://morphe.software/add-source?github=Nezumi-2711/morphe-patches">
+  <img src=".github/assets/add-to-morphe.svg" alt="Add to Morphe" height="48">
+</a>
 
 ### Clone package (local development)
 
