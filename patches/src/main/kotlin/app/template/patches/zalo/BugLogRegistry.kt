@@ -223,7 +223,7 @@ internal fun BytecodePatchContext.bakeBugLogRegistry() {
     registry.hits.values.forEach { (method, patchIds) ->
         method.rebindScratchLabels()
         // Reverse so the breadcrumbs end up in registration order at the top of the method.
-        patchIds.reversed().forEach { id ->
+        patchIds.toList().asReversed().forEach { id ->
             val name = hitMethodName(id)
             check(hitsClass.methods.any {
                 it.name == name && it.parameterTypes.isEmpty() && it.returnType == "V" &&
