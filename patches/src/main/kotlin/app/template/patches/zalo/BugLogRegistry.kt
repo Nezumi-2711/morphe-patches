@@ -53,6 +53,7 @@ internal object PatchId {
     const val MARK_AS_READ_FROM_NOTIFICATIONS = "mark-as-read-from-notifications"
     const val NATIVE_SIGNATURE_FIX = "native-signature-fix"
     const val OPEN_LINKS_IN_EXTERNAL_BROWSER = "open-links-in-external-browser"
+    const val RICH_TEXT_FORMATTING = "rich-text-formatting"
     const val SAVE_MEDIA = "save-media"
     const val SEND_PHOTOS_IN_ORIGINAL_QUALITY = "send-photos-in-original-quality"
     const val UNLIMITED_QUICK_MESSAGES = "unlimited-quick-messages"

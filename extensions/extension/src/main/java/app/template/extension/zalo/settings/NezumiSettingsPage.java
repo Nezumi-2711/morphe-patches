@@ -69,6 +69,8 @@ public final class NezumiSettingsPage {
 
     static final int FEATURE_CALL_BACKGROUND = 1 << 17;
 
+    static final int FEATURE_RICH_TEXT = 1 << 18;
+
     static void attach(View root, View anchor, int feature) {
         if (root == null || anchor == null || !(anchor.getParent() instanceof ViewGroup)) return;
         ViewGroup parent = (ViewGroup) anchor.getParent();
@@ -111,7 +113,7 @@ public final class NezumiSettingsPage {
         int features = state.features;
         boolean hasChatFeatures = (features & (FEATURE_ONLINE_STATUS | FEATURE_REACTION |
             FEATURE_TYPING | FEATURE_READ_RECEIPTS | FEATURE_DELIVERY_RECEIPTS |
-            FEATURE_RECALLED_MESSAGES | FEATURE_CONVERSATION_PROTECTION)) != 0;
+            FEATURE_RECALLED_MESSAGES | FEATURE_CONVERSATION_PROTECTION | FEATURE_RICH_TEXT)) != 0;
         String reactionLabel = vietnamese ? "Mở khóa biểu tượng cảm xúc" : "Unlock reaction icons";
         String typingLabel = vietnamese ? "Ẩn trạng thái đang nhập" : "Hide typing status";
         String readLabel = vietnamese ? "Ẩn trạng thái đã xem" : "Hide read receipts";
@@ -213,6 +215,14 @@ public final class NezumiSettingsPage {
                 prefs.edit().putBoolean(NezumiPrefs.KEEP_RECALLED_MESSAGES, checked).apply();
                 NezumiLog.i(Patch.KEEP_RECALLED_MESSAGES, "NezumiSettingsPage", "setting keep_recalled_messages=" + checked);
             });
+        }
+        if ((features & FEATURE_RICH_TEXT) != 0) {
+            String richTextLabel = vietnamese ? "Thanh định dạng văn bản" : "Text formatting toolbar";
+            String richTextNote = vietnamese ? "Hiện nút Aa trên thanh soạn tin" : "Shows the Aa button on the message bar";
+            View richText = ZaloUi.toggleRow(list, context, richTextLabel, "edit_text",
+                prefs.getBoolean(NezumiPrefs.RICH_TEXT, true), darkMode,
+                (button, checked) -> prefs.edit().putBoolean(NezumiPrefs.RICH_TEXT, checked).apply());
+            addRowNote(ZaloUi.rowTitle(richText), richTextLabel, richTextNote);
         }
         if ((features & FEATURE_DISCOVERY) != 0) {
             ZaloUi.addGroup(list, context, vietnamese ? "Điều hướng" : "Navigation", darkMode);

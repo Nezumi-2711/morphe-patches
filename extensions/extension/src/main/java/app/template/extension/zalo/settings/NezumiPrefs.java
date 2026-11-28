@@ -15,6 +15,9 @@ public final class NezumiPrefs {
     public static final String SHOW_MARK_AS_READ_BUTTON = "show_mark_as_read_button";
     public static final String HIDE_DELIVERY_RECEIPTS = "hide_delivery_receipts";
     public static final String BYPASS_CONVERSATION_PROTECTION = "bypass_conversation_protection";
+    public static final String RICH_TEXT = "rich_text_toolbar";
+    /** Whether the formatting toolbar above the composer is open; global, remembered across chats. */
+    public static final String RICH_TEXT_TOOLBAR_OPEN = "rich_text_toolbar_open";
     public static final String HIDE_MEDIA_BOX = "hide_media_box";
     public static final String HIDE_BUSINESS_BOX = "hide_business_box";
     public static final String HIDE_OA_MESSAGES = "hide_oa_messages";

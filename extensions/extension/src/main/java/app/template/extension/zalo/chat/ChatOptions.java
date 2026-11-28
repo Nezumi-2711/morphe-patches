@@ -28,6 +28,11 @@ public final class ChatOptions {
         return NezumiPrefs.bool(context, NezumiPrefs.HIDE_DELIVERY_RECEIPTS, false);
     }
 
+    /** "Text formatting toolbar": shows the Aa button and sends toolbar styles as rich text. */
+    public static boolean isRichTextEnabled(Context context) {
+        return NezumiPrefs.bool(context, NezumiPrefs.RICH_TEXT, true);
+    }
+
     public static boolean isConversationProtectionBypassed(Context context) {
         return NezumiPrefs.bool(context, NezumiPrefs.BYPASS_CONVERSATION_PROTECTION, true);
     }
