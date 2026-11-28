@@ -8,9 +8,8 @@ import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
-import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -44,7 +43,7 @@ internal object ZaloSettingsFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val chatReactionPickerPatch = bytecodePatch(
+val chatReactionPickerPatch = patch(
     name = "Chat reaction picker",
     description = "Allow the enabled chat reaction UI without a matching subscription package.",
     default = true,
@@ -83,7 +82,6 @@ val chatReactionPickerPatch = bytecodePatch(
     }
 }
 
-context(context: BytecodePatchContext)
 internal fun attachNezumiSettings(methodName: String) {
     check(ZaloSettingsFingerprint.matchAll(1..1).size == 1)
     val settings = ZaloSettingsFingerprint.method
@@ -105,5 +103,5 @@ internal fun attachNezumiSettings(methodName: String) {
     check(settings.getInstruction<OneRegisterInstruction>(privacyIndex + 4).registerA == privacy.registerA)
     settings.addInstructions(privacyIndex + 5, "invoke-static {v${lookup.registerC}, v${privacy.registerA}}, $NEZUMI_SETTINGS->$methodName(Landroid/view/View;Landroid/view/View;)V")
     // Shared by every patch with a settings row, so attributed to shared code rather than one patch.
-    context.registerTouched(PatchId.CORE, settings)
+    registerTouched(PatchId.CORE, settings)
 }

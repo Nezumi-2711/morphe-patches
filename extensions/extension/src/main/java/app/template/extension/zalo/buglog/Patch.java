@@ -40,6 +40,7 @@ public enum Patch {
     MARK_AS_READ_FROM_NOTIFICATIONS("mark-as-read-from-notifications", "chat.NotificationMarkAsRead"),
     NATIVE_SIGNATURE_FIX("native-signature-fix"),
     OPEN_LINKS_IN_EXTERNAL_BROWSER("open-links-in-external-browser", "chat.ExternalLinks"),
+    RICH_TEXT_FORMATTING("rich-text-formatting", "chat.richtext.", "chat.ChatOptions#isRichTextEnabled"),
     SAVE_MEDIA("save-media", "media."),
     SEND_PHOTOS_IN_ORIGINAL_QUALITY("send-photos-in-original-quality"),
     UNLIMITED_QUICK_MESSAGES("unlimited-quick-messages", "quickmessage."),

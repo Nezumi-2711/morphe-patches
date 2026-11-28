@@ -8,7 +8,8 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.mutableClassDefBy
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
@@ -42,7 +43,7 @@ private object NativePhotoQualityFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val sendPhotoAsFilePatch = bytecodePatch(
+val sendPhotoAsFilePatch = patch(
     name = "Send photos in original quality",
     description = "Unlocks Zalo's native original-photo quality option and selects it by default while preserving its normal quality picker.",
     default = true,

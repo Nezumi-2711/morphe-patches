@@ -1,3 +1,7 @@
+### Morphe
+# Private key that signs the patches file
+morphe-signing.key
+
 ### Java template
 # Compiled class file
 *.class
@@ -99,9 +103,6 @@ fabric.properties
 ### Gradle template
 .gradle
 
-### Morphe
-# Private key used to sign patch bundle releases.
-morphe-signing.key
 **/build/
 !src/**/build/
 /patches/bin/

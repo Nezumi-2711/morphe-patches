@@ -6,7 +6,7 @@ import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.string
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -26,7 +26,7 @@ private object DeliveryAckFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val hideDeliveryReceiptsPatch = bytecodePatch(
+val hideDeliveryReceiptsPatch = patch(
     name = "Hide delivery receipts",
     description = "Suppress outgoing message delivery ACKs when enabled in Nezumi Settings.",
     default = true,

@@ -23,7 +23,7 @@ public class PatchTest {
     /** The patch sources, relative to this module (Gradle runs unit tests from the module directory). */
     private static final File PATCH_SOURCES = new File("../../patches/src/main/kotlin/app/template/patches/zalo");
     private static final Pattern PATCH_NAME = Pattern.compile(
-        "(?:bytecodePatch|resourcePatch|rawResourcePatch)\\(\\s*name\\s*=\\s*\"([^\"]+)\"");
+        "(?<![\\w.])patch\\(\\s*name\\s*=\\s*\"([^\"]+)\"");
 
     static String kebab(String name) {
         return name.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");

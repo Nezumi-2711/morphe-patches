@@ -7,9 +7,10 @@ import app.morphe.patcher.string
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.patch.stringOption
+import app.morphe.patcher.patch.mutableClassDefBy
+import app.morphe.patcher.patch.document
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
@@ -54,7 +55,7 @@ private val cloneNameOption = stringOption(
         validator = { !it.isNullOrBlank() && it.length <= 80 && it.none(Char::isISOControl) },
     )
 
-private val clonePackageResources = resourcePatch {
+private val clonePackageResources = patch{
     compatibleWith(cloneCompatibility)
     execute {
         val clonePackage = clonePackageOption.value!!
@@ -137,7 +138,7 @@ private val clonePackageResources = resourcePatch {
 }
 
 @Suppress("unused")
-val clonePackagePatch = bytecodePatch(
+val clonePackagePatch = patch(
     name = "Clone package",
     description = "Install an ARM64 Zalo clone alongside the original with a custom package and app name. Separate accounts are required.",
     default = false,

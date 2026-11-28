@@ -9,7 +9,9 @@ import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.mutableClassDefBy
+import app.morphe.patcher.patch.classDefForEach
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
@@ -73,7 +75,7 @@ private data class QuickMessageSite(
 )
 
 @Suppress("unused")
-val unlimitedQuickMessagesPatch = bytecodePatch(
+val unlimitedQuickMessagesPatch = patch(
     name = "Unlimited quick messages",
     description = "Remove the client-side limit on the number of quick messages, ignoring the server-provided cap.",
     default = true,

@@ -102,6 +102,10 @@ public final class Hits {
         NezumiLog.hit(Patch.OPEN_LINKS_IN_EXTERNAL_BROWSER);
     }
 
+    public static void richTextFormatting() {
+        NezumiLog.hit(Patch.RICH_TEXT_FORMATTING);
+    }
+
     public static void saveMedia() {
         NezumiLog.hit(Patch.SAVE_MEDIA);
     }

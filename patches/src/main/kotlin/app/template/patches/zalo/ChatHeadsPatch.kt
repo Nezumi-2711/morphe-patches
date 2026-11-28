@@ -11,7 +11,7 @@ import app.morphe.patcher.string
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
@@ -77,7 +77,7 @@ private object CurrentChatPostureFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val chatHeadsPatch = bytecodePatch(
+val chatHeadsPatch = patch(
     name = "Chat heads instead of Android bubbles",
     description = "Use Zalo's overlay chat heads rather than native Android bubbles on Android 11 and newer.",
     default = true,

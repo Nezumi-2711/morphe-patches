@@ -10,8 +10,8 @@ import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
-import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patcher.patch.patch
+import app.morphe.patcher.patch.document
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
@@ -105,7 +105,7 @@ private val amoledCompatibility = Compatibility(
     targets = listOf(AppTarget(version = "26.11.01")),
 )
 
-private val amoledThemeResourcePatch = resourcePatch {
+private val amoledThemeResourcePatch = patch{
     compatibleWith(amoledCompatibility)
 
     execute {
@@ -192,7 +192,7 @@ private object GroupCallOnCreateFingerprint : Fingerprint(
 )
 
 @Suppress("unused")
-val amoledThemePatch = bytecodePatch(
+val amoledThemePatch = patch(
     name = "AMOLED dark theme",
     description = "Use true-black backgrounds in Zalo's dark mode, with slightly lifted popups, sheets and chat bubbles, and a dimmed call screen that can be made true black in Nezumi's Settings.",
     default = false,

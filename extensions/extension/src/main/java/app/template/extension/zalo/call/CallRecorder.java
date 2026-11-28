@@ -207,9 +207,11 @@ public final class CallRecorder {
 
     /** Best-effort: open Music/ZaloRecordings in the system file browser, else show its path. */
     public static void openFolder(Context context) {
+        android.net.Uri tree = RecordingFolder.tree(context);
         try {
-            android.net.Uri uri = android.provider.DocumentsContract.buildDocumentUri(
-                "com.android.externalstorage.documents", "primary:" + RecordingSaver.RELATIVE_PATH);
+            android.net.Uri uri = tree != null ? RecordingFolder.folderDocument(tree)
+                : android.provider.DocumentsContract.buildDocumentUri(
+                    "com.android.externalstorage.documents", "primary:" + RecordingSaver.RELATIVE_PATH);
             android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
             intent.setDataAndType(uri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR);
             intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
@@ -217,7 +219,8 @@ public final class CallRecorder {
             context.startActivity(intent);
         } catch (Throwable failure) {
             NezumiLog.w(Patch.CALL_RECORDING, TAG, "open folder failed", failure);
-            Toast.makeText(context, "Thư mục bản ghi: " + RecordingSaver.RELATIVE_PATH, Toast.LENGTH_LONG).show();
+            String folder = tree != null ? RecordingFolder.describe(context) : RecordingSaver.RELATIVE_PATH;
+            Toast.makeText(context, "Thư mục bản ghi: " + folder, Toast.LENGTH_LONG).show();
         }
     }
 

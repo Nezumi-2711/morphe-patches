@@ -13,7 +13,7 @@ import app.template.extension.zalo.buglog.Patch;
 import app.template.extension.zalo.settings.NezumiPrefs;
 import app.template.extension.zalo.shared.ZaloEnv;
 
-/** Hides and auto-mutes Official Account conversations in the Messages tab. */
+/** Hides and auto-mutes Official Account conversations in the Messages tab and drops their notifications while muted. */
 public final class OfficialAccounts {
     private OfficialAccounts() { }
 
@@ -42,13 +42,40 @@ public final class OfficialAccounts {
         MessagesTab.refreshList(Patch.HIDE_OA_ACCOUNTS_IN_MESSAGES);
     }
 
+    /** Zalo's own "Zalo" system account; always treated as an OA. My Cloud is deliberately not listed. */
+    private static final String ZALO_SYSTEM_UID = "68386082";
+
+    // Reflection lookups cached for the per-message notification hook; null until resolved.
+    private static volatile java.lang.reflect.Method officialFlagMethod;
+    private static volatile java.lang.reflect.Method profileCacheMethod;
+    private static volatile java.lang.reflect.Method messageThreadMethod;
+
     private static boolean hasOfficialFlag(Object profile) {
         if (profile == null) return false;
         try {
-            return Boolean.TRUE.equals(profile.getClass().getMethod("B2").invoke(profile));
+            java.lang.reflect.Method flag = officialFlagMethod;
+            if (flag == null || !flag.getDeclaringClass().isInstance(profile)) {
+                flag = profile.getClass().getMethod("B2");
+                officialFlagMethod = flag;
+            }
+            return Boolean.TRUE.equals(flag.invoke(profile));
         } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
             NezumiLog.swallowedOnce(Patch.HIDE_OA_ACCOUNTS_IN_MESSAGES, "OfficialAccounts", "official flag unavailable (B2)", failure);
             return false;
+        }
+    }
+
+    private static Object cachedProfile(String uid) {
+        try {
+            java.lang.reflect.Method lookup = profileCacheMethod;
+            if (lookup == null) {
+                lookup = Class.forName("huj").getMethod("l", String.class);
+                profileCacheMethod = lookup;
+            }
+            return lookup.invoke(null, uid);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
+            NezumiLog.swallowedOnce(Patch.HIDE_OA_ACCOUNTS_IN_MESSAGES, "OfficialAccounts", "profile cache lookup unavailable (huj.l)", failure);
+            return null;
         }
     }
 
@@ -61,26 +88,69 @@ public final class OfficialAccounts {
         }
     }
 
-    /**
-     * An incoming message for an uncached sender makes Zalo's notification processor
-     * (huj.n) cache a blank ContactProfile whose type is 0, so a single profile source
-     * can temporarily deny that a known OA is an OA. Both profile sources are checked
-     * and every confirmed OA uid is remembered per account.
-     */
-    private static boolean isOfficialAccount(Object conversation, String uid, Set<String> known) {
-        if (uid == null || uid.isEmpty() || uid.startsWith("group_")) return false;
-        if (known.contains(uid)) return true;
-        Object cached = null;
+    private static Object conversationProfile(Object conversation) {
         try {
-            cached = Class.forName("huj").getMethod("l", String.class).invoke(null, uid);
-        } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
-            NezumiLog.swallowedOnce(Patch.HIDE_OA_ACCOUNTS_IN_MESSAGES, "OfficialAccounts", "profile cache lookup unavailable (huj.l)", failure);
-        }
-        if (hasOfficialFlag(cached)) return true;
-        try {
-            return hasOfficialFlag(conversation.getClass().getField("a").get(conversation));
+            return conversation.getClass().getField("a").get(conversation);
         } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
             NezumiLog.swallowedOnce(Patch.HIDE_OA_ACCOUNTS_IN_MESSAGES, "OfficialAccounts", "conversation profile unavailable (field a)", failure);
+            return null;
+        }
+    }
+
+    /**
+     * Shared OA test for the Messages list and the notification hook.
+     * An incoming message for an uncached sender makes Zalo's notification processor
+     * (huj.n) cache a blank ContactProfile whose type is 0, so a single profile source
+     * can temporarily deny that a known OA is an OA. The per-account known set, the
+     * profile cache and the caller's profile are all checked; the Zalo system account
+     * is always an OA.
+     */
+    private static boolean isOfficialAccount(String uid, Set<String> known, Object profile) {
+        if (uid == null || uid.isEmpty() || uid.startsWith("group_")) return false;
+        if (ZALO_SYSTEM_UID.equals(uid)) return true;
+        if (known != null && known.contains(uid)) return true;
+        if (hasOfficialFlag(cachedProfile(uid))) return true;
+        return hasOfficialFlag(profile);
+    }
+
+    private static Set<String> knownOfficialAccounts(SharedPreferences prefs, String account) {
+        Set<String> stored = prefs.getStringSet(oaKnownKey(account), null);
+        return stored == null ? new HashSet<>() : new HashSet<>(stored);
+    }
+
+    private static String messageThreadUid(Object message) {
+        try {
+            java.lang.reflect.Method thread = messageThreadMethod;
+            if (thread == null || !thread.getDeclaringClass().isInstance(message)) {
+                thread = message.getClass().getMethod("K1");
+                messageThreadMethod = thread;
+            }
+            Object uid = thread.invoke(message);
+            return uid instanceof String ? (String) uid : null;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
+            NezumiLog.swallowedOnce(Patch.HIDE_OA_ACCOUNTS_IN_MESSAGES, "OfficialAccounts", "message thread uid unavailable (K1)", failure);
+            return null;
+        }
+    }
+
+    /**
+     * Hook at the start of Zalo's chat-notification entry (q44.f). Returns true to drop the
+     * notification for an incoming OA message while "Mute OA messages" is on, including
+     * server force-notify messages that bypass the native mute. Any failure shows the notification.
+     */
+    public static boolean shouldSuppressNotification(Object profile, Object message) {
+        try {
+            if (message == null) return false;
+            Context context = ZaloEnv.appContext(Patch.HIDE_OA_ACCOUNTS_IN_MESSAGES);
+            if (context == null || !isOAMessagesMuted(context)) return false;
+            String uid = messageThreadUid(message);
+            if (uid == null || uid.isEmpty() || uid.startsWith("group_")) return false;
+            String account = ZaloEnv.currentAccount(Patch.HIDE_OA_ACCOUNTS_IN_MESSAGES);
+            if (uid.equals(account)) return false;
+            Set<String> stored = NezumiPrefs.of(context).getStringSet(oaKnownKey(account), null);
+            return isOfficialAccount(uid, stored, profile);
+        } catch (RuntimeException | LinkageError failure) {
+            NezumiLog.swallowedOnce(Patch.HIDE_OA_ACCOUNTS_IN_MESSAGES, "OfficialAccounts", "notification OA check failed", failure);
             return false;
         }
     }
@@ -99,8 +169,7 @@ public final class OfficialAccounts {
         if (!hide && !mute) return items;
         ArrayList filtered = hide ? new ArrayList(items.size()) : null;
         SharedPreferences prefs = NezumiPrefs.of(context);
-        Set<String> stored = prefs.getStringSet(oaKnownKey(account), null);
-        Set<String> known = stored == null ? new HashSet<>() : new HashSet<>(stored);
+        Set<String> known = knownOfficialAccounts(prefs, account);
         boolean learned = false;
         for (Object item : items) {
             boolean official = false;
@@ -108,7 +177,8 @@ public final class OfficialAccounts {
                 if (item != null && Class.forName("r24").isInstance(item)) {
                     Object conversation = item.getClass().getField("f").get(item);
                     String uid = conversation == null ? null : conversationUid(conversation);
-                    official = conversation != null && isOfficialAccount(conversation, uid, known);
+                    official = conversation != null
+                        && isOfficialAccount(uid, known, conversationProfile(conversation));
                     if (official && known.add(uid)) learned = true;
                     if (official && mute) muteOfficialAccount(context, account, conversation);
                 }
